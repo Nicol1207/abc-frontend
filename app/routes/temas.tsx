@@ -11,6 +11,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { getContents } from "~/services/loaders/teacher.server";
 import { toast } from "~/hooks/use-toast";
 import { Eye } from "lucide-react";
+import { Dialog as ConfirmDialog, DialogContent as ConfirmDialogContent, DialogHeader as ConfirmDialogHeader, DialogTitle as ConfirmDialogTitle, DialogFooter as ConfirmDialogFooter } from "~/components/ui/dialog";
 
 export const meta: MetaFunction = () => [
   { title: "ABC English" },
@@ -28,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const contents = await getContents({ request, theme_id: id });
 
-  console.log("Contents loaded:", contents);
+  console.log("Contents loaded:", contents.data);
 
   const imagenes = contents.data.images;
   const videos = contents.data.videos;
@@ -60,6 +61,8 @@ export default function Temas() {
   const [dragActive, setDragActive] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState<{ type: "image" | "video" | null, url: string, title: string }>({ type: null, url: "", title: "" });
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value, files } = e.target;
@@ -161,6 +164,41 @@ export default function Temas() {
     setPreviewOpen(true);
   }
 
+  // Eliminar contenido usando fetcher Remix
+  function handleDeleteContent(id: number) {
+    setDeleteId(id);
+    setShowDeleteDialog(true);
+  }
+
+  function confirmDelete() {
+    if (!deleteId) return;
+    const formData = new FormData();
+    formData.append("id", deleteId.toString());
+    fetcher.submit(formData, {
+      method: "post",
+      action: "/api/teacher/eliminar_contenido",
+    });
+    setShowDeleteDialog(false);
+    setDeleteId(null);
+  }
+
+  // Actualizar la lista localmente tras eliminar
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data && fetcher.data.success === "success") {
+      toast({
+        title: "Eliminado",
+        description: "El contenido ha sido eliminado correctamente.",
+      });
+      window.location.reload();
+    } else if (fetcher.state === "idle" && fetcher.data && fetcher.data.success === "error") {
+      toast({
+        title: "Error",
+        description: fetcher.data.toast?.description || "No se pudo eliminar el contenido.",
+        variant: "destructive",
+      });
+    }
+  }, [fetcher.state, fetcher.data]);
+
   return (
     <AppLayout sidebarOptions={loaderData.sidebar} userData={loaderData.user}>
       <div className="w-full max-w-6xl mx-auto py-8">
@@ -196,7 +234,7 @@ export default function Temas() {
                                 Título
                               </th>
                               <th className="w-1/2 bg-[#d9f4f9] text-[#008999] font-bold text-lg py-3 px-4 text-center rounded-tr-xl">
-                                Archivo
+                                Acciones
                               </th>
                             </tr>
                           </thead>
@@ -209,14 +247,27 @@ export default function Temas() {
                               <tr key={item.id} className="border-b border-[#e0e0e0] last:border-b-0">
                                 <td className="w-1/2 py-4 px-4 text-center">{item.titulo}</td>
                                 <td className="w-1/2 py-4 px-4 text-center">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    title="Ver imagen"
-                                    onClick={() => handlePreview("image", "http://localhost:3000/storage/" + item.url, item.titulo)}
-                                  >
-                                    <Eye />
-                                  </Button>
+                                  <div className="flex justify-center gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      title="Ver imagen"
+                                      onClick={() => handlePreview("image", "http://localhost:3000/storage/" + item.url, item.titulo)}
+                                    >
+                                      <Eye />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      title="Eliminar imagen"
+                                      onClick={() => handleDeleteContent(item.id_contenido)}
+                                      style={{ color: '#e53935' }}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    </Button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
@@ -247,7 +298,7 @@ export default function Temas() {
                                 Título
                               </th>
                               <th className="w-1/2 bg-[#d9f4f9] text-[#008999] font-bold text-lg py-3 px-4 text-center rounded-tr-xl">
-                                Archivo
+                                Acciones
                               </th>
                             </tr>
                           </thead>
@@ -260,14 +311,27 @@ export default function Temas() {
                               <tr key={item.id} className="border-b border-[#e0e0e0] last:border-b-0">
                                 <td className="w-1/2 py-4 px-4 text-center">{item.titulo}</td>
                                 <td className="w-1/2 py-4 px-4 text-center">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    title="Ver video"
-                                    onClick={() => handlePreview("video", item.url, item.titulo)}
-                                  >
-                                    <Eye />
-                                  </Button>
+                                  <div className="flex justify-center gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      title="Ver video"
+                                      onClick={() => handlePreview("video", "http://localhost:3000/storage/" + item.url, item.titulo)}
+                                    >
+                                      <Eye />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      title="Eliminar video"
+                                      onClick={() => handleDeleteContent(item.id_contenido)}
+                                      style={{ color: '#e53935' }}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    </Button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
@@ -298,7 +362,7 @@ export default function Temas() {
                                 Título
                               </th>
                               <th className="w-1/2 bg-[#d9f4f9] text-[#008999] font-bold text-lg py-3 px-4 text-center rounded-tr-xl">
-                                Archivo
+                                Acciones
                               </th>
                             </tr>
                           </thead>
@@ -311,14 +375,27 @@ export default function Temas() {
                               <tr key={item.id} className="border-b border-[#e0e0e0] last:border-b-0">
                                 <td className="w-1/2 py-4 px-4 text-center">{item.titulo}</td>
                                 <td className="w-1/2 py-4 px-4 text-center">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    title="Ver archivo"
-                                    onClick={() => window.open(item.url, "_blank")}
-                                  >
-                                    <Eye />
-                                  </Button>
+                                  <div className="flex justify-center gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      title="Ver archivo"
+                                      onClick={() => window.open("http://localhost:3000/storage/" + item.url, "_blank")}
+                                    >
+                                      <Eye />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      title="Eliminar archivo"
+                                      onClick={() => handleDeleteContent(item.id_contenido)}
+                                      style={{ color: '#e53935' }}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    </Button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
@@ -407,6 +484,18 @@ export default function Temas() {
             </div>
           </DialogContent>
         </Dialog>
+        <ConfirmDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <ConfirmDialogContent>
+            <ConfirmDialogHeader>
+              <ConfirmDialogTitle>¿Eliminar contenido?</ConfirmDialogTitle>
+            </ConfirmDialogHeader>
+            <div className="py-4 text-center text-lg">Esta acción no se puede deshacer. ¿Deseas continuar?</div>
+            <ConfirmDialogFooter>
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancelar</Button>
+              <Button variant="destructive" onClick={confirmDelete}>Eliminar</Button>
+            </ConfirmDialogFooter>
+          </ConfirmDialogContent>
+        </ConfirmDialog>
       </div>
     </AppLayout>
   );
