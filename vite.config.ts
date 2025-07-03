@@ -34,6 +34,7 @@ export default defineConfig({
           route("/api/admin/delete_teacher/:id", "routes/api/admin/delete_teacher.server.ts");
           route("/api/teacher/eliminar_contenido", "routes/api/teacher/eliminar_contenido.server.ts");
           route("/api/student/view_content", "routes/api/student/view_content.server.ts");
+          route("/api/teacher/asignar_recompensa", "routes/api/teacher/asignar_recompensa.server.ts");
 
           // Frontend Routes
           route("/temas/:id", "routes/temas.tsx");

@@ -49,6 +49,44 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Index() {
+  // Estado y handlers para el modal de recompensa
+  const [showRewardModal, setShowRewardModal] = useState(false);
+  const [studentReward, setStudentReward] = useState<any>(null);
+  const [rewardAmount, setRewardAmount] = useState(1);
+
+  function handleOpenRewardModal(student: any) {
+    setStudentReward(student);
+    setRewardAmount(1);
+    setShowRewardModal(true);
+  }
+
+  function handleCloseRewardModal() {
+    setShowRewardModal(false);
+    setStudentReward(null);
+    setRewardAmount(1);
+  }
+
+  async function handleAssignReward(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      const formData = new FormData();
+      formData.append("studentId", studentReward.id);
+      formData.append("cantidad", rewardAmount.toString());
+      const res = await fetch("/api/teacher/asignar_recompensa", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success === "success") {
+        toast({ title: data.toast.title, description: data.toast.description });
+        handleCloseRewardModal();
+      } else {
+        toast({ title: data.toast.title, description: data.toast.description, variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "Ocurrió un error al asignar la recompensa.", variant: "destructive" });
+    }
+  }
   const fetcher = useFetcher<any>();
   const loaderData = useLoaderData<any>();
 
@@ -272,7 +310,7 @@ export default function Index() {
                               variant="outline"
                               className="bg-[#3498fd] hover:bg-[#1565c0] text-white w-9 h-9 p-0 rounded flex items-center justify-center"
                               title="Editar"
-                              onClick={() => handleEditEstudiante(item)} // Call handleEditEstudiante on click
+                              onClick={() => handleEditEstudiante(item)}
                             >
                               <EditIcon className="w-5 h-5" />
                             </Button>
@@ -280,12 +318,66 @@ export default function Index() {
                               variant="outline"
                               className="bg-[#ef4444] hover:bg-[#b91c1c] text-white w-9 h-9 p-0 rounded flex items-center justify-center"
                               title="Eliminar"
-                              onClick={() => handleDeleteEstudiante(item)} // Call handleDeleteEstudiante on click
+                              onClick={() => handleDeleteEstudiante(item)}
                             >
                               <TrashIcon className="w-5 h-5" />
                             </Button>
+                            <Button
+                              variant="outline"
+                              className="bg-green-500 hover:bg-green-600 text-white w-9 h-9 p-0 rounded flex items-center justify-center"
+                              title="Asignar recompensa"
+                              onClick={() => handleOpenRewardModal(item)}
+                            >
+                              <span className="font-bold text-lg">★</span>
+                            </Button>
                           </div>
                         </td>
+      {/* Modal para asignar recompensa */}
+      {showRewardModal && studentReward && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md relative">
+            <h2 className="text-2xl font-bold mb-4 text-green-600">
+              Asignar Recompensa
+            </h2>
+            <form onSubmit={handleAssignReward} className="flex flex-col gap-4">
+              <div>
+                <label className="block font-semibold mb-1 text-green-700 bg-white px-1 rounded">
+                  Estudiante
+                </label>
+                <div className="font-bold text-lg">{studentReward.name}</div>
+              </div>
+              <div>
+                <label className="block font-semibold mb-1 text-green-700 bg-white px-1 rounded">
+                  Cantidad
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={rewardAmount}
+                  onChange={e => setRewardAmount(Number(e.target.value))}
+                  className="w-full border border-green-500 rounded-lg px-3 py-2 bg-white text-black focus:outline-none focus:ring-2 focus:ring-green-500"
+                  required
+                />
+              </div>
+              <div className="flex gap-4 justify-end mt-2">
+                <button
+                  type="button"
+                  className="border border-green-500 text-green-700 px-4 py-2 rounded-lg font-bold hover:bg-green-50 transition"
+                  onClick={handleCloseRewardModal}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="bg-green-500 text-white font-bold px-4 py-2 rounded-lg hover:bg-green-600 transition"
+                >
+                  Asignar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
                       </tr>
                     ))
                   )}
