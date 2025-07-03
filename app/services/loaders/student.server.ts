@@ -34,3 +34,20 @@ export async function getImages({request}: any) {
         return {};
     }
 }
+
+export async function getTeacher({ request }: any) {
+    let response: any = {};
+
+    try {
+        const token = await currentToken({request});
+        response = await axios.get('/api/student/teacher', {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        return response.data;
+    } catch (error: any) {
+        console.log(error);
+        return {};
+    }
+}

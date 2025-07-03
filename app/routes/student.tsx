@@ -4,6 +4,7 @@ import AppLayout from "~/layouts/AppLayout";
 import { getSidebar, requireAuth, user } from "~/services/auth.server";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
+import { getTeacher } from "~/services/loaders/student.server";
 
 export const meta: MetaFunction = () => {
   return [
@@ -17,13 +18,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const u = await user({request});
   const sidebar = await getSidebar({request});
+  const teacher = await getTeacher({ request });
 
-  console.log("Cargando datos del estudiante:", u);
+  console.log("Cargando datos del estudiante:", teacher);
 
   // profesor de inglés asignado
   const englishTeacher = {
-    name: "Prof. María González",
-    email: "maria.gonzalez@abcenglish.com",
+    name: teacher.data.name,
+    email: teacher.data.email,
     subject: "Inglés"
   };
 
@@ -88,28 +90,19 @@ export default function Index() {
         </div>
         <div className="flex flex-row gap-8 w-full max-w-4xl mx-auto justify-center flex-1 items-center">
           <DashboardButton
-            color="bg-yellow-400"
-            hover="hover:bg-yellow-500"
-            icon="🎬"
-            label="Videos"
-            to="/text"
-            className="flex-1"
-            
-          />
-          <DashboardButton
-            color="bg-sky-400"
-            hover="hover:bg-sky-500"
-            icon="🖼️"
-            label="Imágenes"
-            to="/images"
+            color="bg-blue-500"
+            hover="hover:bg-blue-600"
+            icon="📚"
+            label="Temas"
+            to="/student_themes"
             className="flex-1"
           />
           <DashboardButton
-            color="bg-rose-400"
-            hover="hover:bg-rose-500"
-            icon="📖"
-            label="Textos"
-            to="/video"
+            color="bg-green-500"
+            hover="hover:bg-green-600"
+            icon="📒✏️"
+            label="Actividades"
+            to="/activities"
             className="flex-1"
           />
         </div>

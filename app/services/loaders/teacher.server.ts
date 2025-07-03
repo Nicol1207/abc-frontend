@@ -56,7 +56,7 @@ export async function getContents({request, theme_id}: any) {
     let response: any = {};
     try {
         const token = await currentToken({request});
-        response = await axios.get(`/api/contents/${theme_id}`, {
+        response = await axios.get(`/api/student/contents/${theme_id}`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }

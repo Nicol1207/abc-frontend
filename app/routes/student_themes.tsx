@@ -89,7 +89,7 @@ export default function Index() {
                         className={`${colors.bg.replace('100', '200')} ${colors.text} font-bold ${colors.hoverBg} border-2 ${colors.border} shadow-none`}
                       >
                         {/* Link to the specific theme's content. Assuming '/temas' is the route for contents of a theme */}
-                        <Link to={`/temas/${theme.id_temas}`}>Ver Contenido</Link>
+                        <Link to={`/student_themes/${theme.id_temas}`}>Ver Contenido</Link>
                       </Button>
                     </div>
                   </CardContent>
