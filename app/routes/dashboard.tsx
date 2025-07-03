@@ -1,8 +1,14 @@
+
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import AppLayout from "~/layouts/AppLayout";
-import { useEffect, useState } from "react";
-import { getSidebar, requireAdmin, requireAuth, user } from "~/services/auth.server";
+import React from "react";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
+} from "recharts";
+
+import { currentToken, getSidebar, requireAdmin, requireAuth, user } from "~/services/auth.server";
 import { Separator } from "~/components/ui/separator";
 
 export const meta: MetaFunction = () => {
@@ -16,180 +22,136 @@ export async function loader({ request }: LoaderFunctionArgs) {
   await requireAuth({ request });
   await requireAdmin({ request });
 
-  const u = await user({request});
-  const sidebar = await getSidebar({request});
+  const u = await user({ request });
+  const sidebar = await getSidebar({ request });
 
-  console.log(u)
+  // Llamada a la API para dashboard
+  const apiUrl = process.env.API_URL || "http://localhost:3000/api/dashboard";
+  const cookie = request.headers.get("cookie") || "";
+  let dashboardData;
+  try {
+    const token = await currentToken({request});
+    const res = await fetch(apiUrl, {
+      headers: {
+        Cookie: cookie,
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: "include",
+    });
+    if (!res.ok) {
+      const errorText = await res.text();
+      // Mostrar error detallado en la terminal
+      console.error(`Error al cargar dashboard (${res.status}):`, errorText);
+      throw new Error(`Error al cargar dashboard (${res.status}): ${errorText}`);
+    }
+    dashboardData = await res.json();
+  } catch (err: any) {
+    // Mostrar error detallado en la terminal
+    console.error("Error en fetch dashboard:", err);
+    throw new Error(`Error en fetch dashboard: ${err?.message || err}`);
+  }
 
-  return {
+  return json({
     user: {
       ...u.user,
       role: u.role,
     },
     sidebar: sidebar,
-  };
+    dashboard: dashboardData,
+  });
 }
 
 export default function Index() {
   const loaderData = useLoaderData<any>();
+  const dashboard = loaderData.dashboard;
 
-  // Simulación de datos (reemplaza por datos reales del backend)
-  const topIngresos = [
-    { nombre: "Juan Pérez", ingresos: 42 },
-    { nombre: "Ana Gómez", ingresos: 39 },
-    { nombre: "Luis Torres", ingresos: 35 },
-  ];
-  const topRecompensas = [
-    { nombre: "Ana Gómez", recompensas: 15 },
-    { nombre: "Juan Pérez", recompensas: 12 },
-    { nombre: "María Ruiz", recompensas: 10 },
-  ];
-  const materiasPopulares = [
-    { materia: "Inglés", abiertos: 120 },
-    { materia: "Matemáticas", abiertos: 98 },
-    { materia: "Ciencias", abiertos: 87 },
-  ];
-
-  // Animación simple de conteo
-  function AnimatedNumber({ value }: { value: number }) {
-    const [display, setDisplay] = useState(0);
-    useEffect(() => {
-      let start = 0;
-      const end = value;
-      if (start === end) return;
-      let increment = end > start ? 1 : -1;
-      let stepTime = Math.abs(Math.floor(1000 / (end - start)));
-      const timer = setInterval(() => {
-        start += increment;
-        setDisplay(start);
-        if (start === end) clearInterval(timer);
-      }, stepTime > 40 ? stepTime : 40);
-      return () => clearInterval(timer);
-    }, [value]);
-    return <span className="font-bold text-lg transition-all duration-500">{display}</span>;
-  }
-
-  // Tarjeta animada
-  function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-    return (
-      <div className={`bg-white rounded-xl shadow-lg p-6 hover:scale-105 transition-transform duration-300 border border-[#e0f7fa] ${className}`}>
-        {children}
-      </div>
-    );
-  }
-
-  // Barra de progreso animada
-  function ProgressBar({ value, max }: { value: number; max: number }) {
-    const percent = Math.round((value / max) * 100);
-    return (
-      <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
-        <div
-          className="bg-[#008999] h-3 rounded-full transition-all duration-700"
-          style={{ width: `${percent}%` }}
-        ></div>
-      </div>
-    );
-  }
+  const estudiantesAccesos: { nombre: string; accesos: number }[] = dashboard.estudiantesAccesos || [];
+  const estudiantesPuntos: { nombre: string; puntos: number }[] = dashboard.estudiantesPuntos || [];
+  const materialesUtilizados: { nombre: string; usos: number }[] = dashboard.materialesUtilizados || [];
+  const cantidadProfesores = dashboard.cantidadProfesores || 0;
+  const cantidadCursos = dashboard.cantidadCursos || 0;
+  const cantidadEstudiantes = dashboard.cantidadEstudiantes || 0;
+  const pieColors = ["#0097a7", "#26c6da", "#80deea", "#b2ebf2"];
 
   return (
     <AppLayout
       sidebarOptions={loaderData.sidebar}
       userData={loaderData.user}
     >
-      <div className="w-full max-w-6xl mx-auto py-8">
+      <div className="w-full max-w-7xl mx-auto py-8">
         <div className="flex flex-col mb-4">
-          <h1 className="text-4xl font-bold text-primary">Inicio</h1>
+          <h1 className="text-4xl font-bold text-primary">Dashboard</h1>
           <Separator className="my-4 bg-[#004d5a]" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Estudiantes que más ingresan */}
-          <Card>
-            <h2 className="text-xl font-bold mb-4 text-[#008999] flex items-center gap-2">
-              <span className="animate-bounce"></span> Estudiantes que más ingresan
-            </h2>
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th className="text-left py-2">Nombre</th>
-                  <th className="text-left py-2">Ingresos</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topIngresos.map((est, idx) => (
-                  <tr key={idx} className="hover:bg-[#e0f7fa] transition">
-                    <td className="py-1">{est.nombre}</td>
-                    <td className="py-1">
-                      <AnimatedNumber value={est.ingresos} />
-                      <ProgressBar value={est.ingresos} max={topIngresos[0].ingresos} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
-          {/* Estudiantes con más recompensas */}
-          <Card>
-            <h2 className="text-xl font-bold mb-4 text-[#008999] flex items-center gap-2">
-              <span className="animate-bounce"></span> Estudiantes con más recompensas
-            </h2>
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th className="text-left py-2">Nombre</th>
-                  <th className="text-left py-2">Recompensas</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topRecompensas.map((est, idx) => (
-                  <tr key={idx} className="hover:bg-[#e0f7fa] transition">
-                    <td className="py-1">{est.nombre}</td>
-                    <td className="py-1">
-                      <AnimatedNumber value={est.recompensas} />
-                      <ProgressBar value={est.recompensas} max={topRecompensas[0].recompensas} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
-          {/* Materias más abiertas */}
-          <Card>
-            <h2 className="text-xl font-bold mb-4 text-[#008999] flex items-center gap-2">
-              <span className="animate-bounce"></span> Materias más abiertas
-            </h2>
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th className="text-left py-2">Materia</th>
-                  <th className="text-left py-2">Veces abiertas</th>
-                </tr>
-              </thead>
-              <tbody>
-                {materiasPopulares.map((mat, idx) => (
-                  <tr key={idx} className="hover:bg-[#e0f7fa] transition">
-                    <td className="py-1">{mat.materia}</td>
-                    <td className="py-1">
-                      <AnimatedNumber value={mat.abiertos} />
-                      <ProgressBar value={mat.abiertos} max={materiasPopulares[0].abiertos} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
+        {/* Cards resumen */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+            <span className="text-3xl font-bold text-primary">{cantidadProfesores}</span>
+            <span className="text-gray-600 mt-2">Profesores</span>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+            <span className="text-3xl font-bold text-primary">{cantidadCursos}</span>
+            <span className="text-gray-600 mt-2">Cursos activos</span>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+            <span className="text-3xl font-bold text-primary">{cantidadEstudiantes}</span>
+            <span className="text-gray-600 mt-2">Estudiantes totales</span>
+          </div>
+        </div>
+        {/* Gráficos */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Gráfico de barras: Estudiantes con más accesos */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4 text-primary">Estudiantes con más accesos al software</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={estudiantesAccesos} layout="vertical" margin={{ left: 30, right: 30 }}>
+                <XAxis type="number" />
+                <YAxis dataKey="nombre" type="category" width={120} />
+                <RechartsTooltip />
+                <Bar dataKey="accesos" fill="#0097a7" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          {/* Gráfico de pastel: Material más utilizado */}
+          <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
+            <h2 className="text-xl font-semibold mb-4 text-primary text-center">Material más utilizado por los estudiantes</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={materialesUtilizados}
+                  dataKey="usos"
+                  nameKey="nombre"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  label
+                >
+                  {materialesUtilizados.map((entry: { nombre: string; usos: number }, index: number) => (
+                    <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
+                  ))}
+                </Pie>
+                <Legend />
+                <RechartsTooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Gráfico de barras: Estudiantes con más puntos (ancho completo, barras verticales) */}
+          <div className="bg-white rounded-lg shadow p-6 col-span-1 lg:col-span-3">
+            <h2 className="text-xl font-semibold mb-4 text-primary">Estudiantes con más puntos</h2>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={estudiantesPuntos} margin={{ left: 30, right: 30 }}>
+                <XAxis dataKey="nombre" />
+                <YAxis />
+                <RechartsTooltip />
+                <Bar dataKey="puntos" fill="#26c6da" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
-      <style>
-        {`
-          .animate-fade-in {
-            animation: fadeIn 1s;
-          }
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px);}
-            to { opacity: 1; transform: translateY(0);}
-          }
-        `}
-      </style>
     </AppLayout>
   );
 }
