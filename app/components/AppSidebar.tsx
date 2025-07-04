@@ -27,7 +27,8 @@ import {
   UserCircleIcon,
   ChevronRight,
   UserPen,
-  House 
+  House,
+  Text,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -39,7 +40,7 @@ import {
 } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
 
-const icons = [<UserPen />, <SquareLibrary />, <Images />,  <Video />, <BookA />, <House/>];
+const icons = [<UserPen />, <SquareLibrary />, <Images />,  <Video />, <BookA />, <House/>, <Text />];
 
 export default function AppSidebar({
   sidebarOptions,
