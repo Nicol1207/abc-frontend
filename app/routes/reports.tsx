@@ -167,15 +167,101 @@ export default function Index() {
 
   async function generarPDFListadoCursos(cursoId: string) {
     setGenerando(true);
-    setTimeout(() => {
-      setGenerando(false);
+    try {
+      // Petición a la API para obtener los datos
+      const res = await fetch(`http://localhost:3000/api/reports/courses/${cursoId}`, {
+        headers: {
+          Authorization: `Bearer ${loaderData.token}`,
+        }
+      });
+      if (!res.ok) throw new Error("Error al obtener datos del reporte");
+      const data = await res.json();
+      let cursos = [];
       if (cursoId === "all") {
-        alert("PDF de listado de todos los cursos generado");
+        cursos = data.data || [];
       } else {
-        const curso = loaderData.cursos.find((c: any) => c.id == cursoId);
-        alert(`PDF generado para el curso: ${curso?.section || cursoId}`);
+        cursos = [data.data];
       }
-    }, 1200);
+
+      // Crea el PDF
+      const doc = new jsPDF();
+
+      // Logo (ajusta la ruta si es necesario)
+      const logoUrl = '/image.png'; // Debe estar en public/
+      const getImageBase64 = (url: string) => {
+        return new Promise<string>((resolve, reject) => {
+          const img = new window.Image();
+          img.crossOrigin = 'Anonymous';
+          img.onload = function () {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return reject('No context');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          };
+          img.onerror = reject;
+          img.src = url;
+        });
+      };
+      const logoBase64 = await getImageBase64(logoUrl);
+      doc.addImage(logoBase64, 'PNG', 14, 10, 18, 18);
+
+      // Fecha de emisión (derecha)
+      const fecha = new Date();
+      const fechaStr = fecha.toLocaleDateString('es-VE', { year: 'numeric', month: 'long', day: 'numeric' });
+      doc.setFontSize(10);
+      doc.text(`Fecha de emisión: ${fechaStr}`, 200, 14, { align: 'right' });
+
+      // Nombre de la institución y dirección
+      doc.setFontSize(13);
+      doc.text('U.E.M. "Maestra Carmen Haydee Valdivieso"', 36, 16);
+      doc.setFontSize(10);
+      doc.text('Porlamar, Municipio Mariño', 36, 22);
+
+      // Título del reporte
+      doc.setFontSize(16);
+      doc.text("Listado de cursos", 14, 36);
+
+      // Tabla de cursos
+      let startY = 44;
+      cursos.forEach((curso: any, idx: number) => {
+        // Info del curso
+        doc.setFontSize(12);
+        doc.text(`Curso: ${curso.section} | Profesor: ${curso.teacher}`, 14, startY);
+        doc.setFontSize(10);
+        // doc.text(`Estado: ${curso.status}`, 14, startY + 6);
+
+        // Tabla de estudiantes
+        const estudiantes = curso.students || [];
+        autoTable(doc, {
+          head: [["#", "Nombre", "Email/ID"]],
+          body: estudiantes.map((est: any, i: number) => [i + 1, est.name, est.email]),
+          startY: startY + 10,
+          styles: { fontSize: 10 },
+          headStyles: { fillColor: [0, 137, 153] },
+          didDrawPage: function (data) {
+            // Número de página al pie
+            const pageCount = doc.getNumberOfPages();
+            doc.setFontSize(10);
+            doc.text(`Página ${doc.getCurrentPageInfo().pageNumber} de ${pageCount}`,
+              doc.internal.pageSize.getWidth() / 2,
+              doc.internal.pageSize.getHeight() - 8,
+              { align: 'center' }
+            );
+          }
+        });
+        // Calcula el siguiente Y para el próximo curso
+        startY = (doc as any).lastAutoTable.finalY + 12;
+      });
+
+      doc.save(`listado_cursos_${cursoId}.pdf`);
+    } catch (err: any) {
+      alert("Error generando el PDF: " + (err?.message || err));
+    } finally {
+      setGenerando(false);
+    }
   }
 
   return (
