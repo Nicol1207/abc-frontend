@@ -56,6 +56,8 @@ export default function Temas() {
   const [nuevoContenido, setNuevoContenido] = useState({
     contenido: "",
     archivo: null as File | null,
+    tipoCarga: "archivo", // "archivo" o "link"
+    link: "",
   });
   const [contentType, setContentType] = useState<string>("1"); // 1: imagen, 2: video, 3: texto
   const [dragActive, setDragActive] = useState(false);
@@ -64,11 +66,13 @@ export default function Temas() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const { name, value, files } = e.target;
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    const { name, value, files, type } = e.target as any;
     if (name === "archivo") {
       setNuevoContenido((prev) => ({ ...prev, archivo: files && files.length > 0 ? files[0] : null }));
       setDragActive(false);
+    } else if (name === "tipoCarga") {
+      setNuevoContenido((prev) => ({ ...prev, tipoCarga: value, archivo: null, link: "" }));
     } else {
       setNuevoContenido((prev) => ({ ...prev, [name]: value }));
     }
@@ -97,18 +101,22 @@ export default function Temas() {
 
   function handleDialogClose() {
     setShowDialog(false);
-    setNuevoContenido({ contenido: "", archivo: null });
+    setNuevoContenido({ contenido: "", archivo: null, tipoCarga: "archivo", link: "" });
   }
 
   function handleDialogSave(e: React.FormEvent) {
     e.preventDefault();
     const formData = new FormData();
     formData.append("contenido", nuevoContenido.contenido);
-    if (nuevoContenido.archivo) {
-      formData.append("file", nuevoContenido.archivo);
-    }
     formData.append("id_tipocontenido_fk", contentType);
     formData.append("id_tema_fk", id+"");
+    formData.append("tipoCarga", nuevoContenido.tipoCarga);
+    if (nuevoContenido.tipoCarga === "archivo" && nuevoContenido.archivo) {
+      formData.append("file", nuevoContenido.archivo);
+    }
+    if (nuevoContenido.tipoCarga === "link" && nuevoContenido.link) {
+      formData.append("link", nuevoContenido.link);
+    }
 
     fetcher.submit(
       formData,
@@ -119,7 +127,7 @@ export default function Temas() {
       }
     );
     setShowDialog(false);
-    setNuevoContenido({ contenido: "", archivo: null });
+    setNuevoContenido({ contenido: "", archivo: null, tipoCarga: "archivo", link: "" });
   }
 
   // Helper para obtener los datos según el tab
@@ -252,7 +260,7 @@ export default function Temas() {
                                       variant="ghost"
                                       size="icon"
                                       title="Ver imagen"
-                                      onClick={() => handlePreview("image", "http://localhost:3000/storage/" + item.url, item.titulo)}
+                                      onClick={() => handlePreview("image", item.url, item.titulo)}
                                     >
                                       <Eye />
                                     </Button>
@@ -316,7 +324,7 @@ export default function Temas() {
                                       variant="ghost"
                                       size="icon"
                                       title="Ver video"
-                                      onClick={() => handlePreview("video", "http://localhost:3000/storage/" + item.url, item.titulo)}
+                                      onClick={() => handlePreview("video", item.url, item.titulo)}
                                     >
                                       <Eye />
                                     </Button>
@@ -380,7 +388,7 @@ export default function Temas() {
                                       variant="ghost"
                                       size="icon"
                                       title="Ver archivo"
-                                      onClick={() => window.open("http://localhost:3000/storage/" + item.url, "_blank")}
+                                      onClick={() => window.open(item.url, "_blank")}
                                     >
                                       <Eye />
                                     </Button>
@@ -427,38 +435,66 @@ export default function Temas() {
                 />
               </div>
               <div>
-                <label className="block font-semibold mb-1 text-[#008999]">Archivo</label>
-                <div
-                  className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg px-4 py-8 cursor-pointer transition-colors ${
-                    dragActive ? "border-[#33b0bb] bg-[#e0f7fa]" : "border-[#008999] bg-white"
-                  }`}
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onClick={() => document.getElementById("file-input-tema")?.click()}
-                  style={{ minHeight: "120px" }}
+                <label className="block font-semibold mb-1 text-[#008999]">Tipo de carga</label>
+                <select
+                  name="tipoCarga"
+                  value={nuevoContenido.tipoCarga}
+                  onChange={handleInputChange}
+                  className="w-full border border-[#008999] rounded-lg px-3 py-2 bg-white text-black focus:outline-none focus:ring-2 focus:ring-[#008999]"
                 >
-                  <input
-                    id="file-input-tema"
-                    type="file"
-                    name="archivo"
-                    accept="*"
-                    onChange={handleInputChange}
-                    className="hidden"
-                  />
-                  {nuevoContenido.archivo ? (
-                    <div className="text-[#008999] font-semibold truncate">
-                      {nuevoContenido.archivo.name}
-                    </div>
-                  ) : (
-                    <div className="text-[#008999] font-semibold text-center">
-                      {dragActive
-                        ? "Suelta el archivo aquí"
-                        : "Arrastra y suelta un archivo aquí o haz clic para seleccionar"}
-                    </div>
-                  )}
-                </div>
+                  <option value="archivo">Archivo</option>
+                  <option value="link">Link</option>
+                </select>
               </div>
+              {nuevoContenido.tipoCarga === "archivo" && (
+                <div>
+                  <label className="block font-semibold mb-1 text-[#008999]">Archivo</label>
+                  <div
+                    className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg px-4 py-8 cursor-pointer transition-colors ${
+                      dragActive ? "border-[#33b0bb] bg-[#e0f7fa]" : "border-[#008999] bg-white"
+                    }`}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onClick={() => document.getElementById("file-input-tema")?.click()}
+                    style={{ minHeight: "120px" }}
+                  >
+                    <input
+                      id="file-input-tema"
+                      type="file"
+                      name="archivo"
+                      accept="*"
+                      onChange={handleInputChange}
+                      className="hidden"
+                    />
+                    {nuevoContenido.archivo ? (
+                      <div className="text-[#008999] font-semibold truncate">
+                        {nuevoContenido.archivo.name}
+                      </div>
+                    ) : (
+                      <div className="text-[#008999] font-semibold text-center">
+                        {dragActive
+                          ? "Suelta el archivo aquí"
+                          : "Arrastra y suelta un archivo aquí o haz clic para seleccionar"}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {nuevoContenido.tipoCarga === "link" && (
+                <div>
+                  <label className="block font-semibold mb-1 text-[#008999]">Enlace</label>
+                  <input
+                    type="url"
+                    name="link"
+                    value={nuevoContenido.link}
+                    onChange={handleInputChange}
+                    className="w-full border border-[#008999] rounded-lg px-3 py-2 bg-white text-black focus:outline-none focus:ring-2 focus:ring-[#008999]"
+                    placeholder="https://..."
+                    required
+                  />
+                </div>
+              )}
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={handleDialogClose}>
                   Cancelar

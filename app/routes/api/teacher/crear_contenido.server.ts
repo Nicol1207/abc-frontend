@@ -11,13 +11,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const file = formData.get('file') as File | null;
     const tipo = formData.get('id_tipocontenido_fk') as string;
     const tema = formData.get('id_tema_fk') as string;
+    const tipoCarga = formData.get('tipoCarga') as string;
+    const link = formData.get('link') as string | null;
 
     const payload = new FormData();
     payload.append('contenido', contenido);
     payload.append('id_tipocontenido_fk', tipo);
     payload.append('id_tema_fk', tema);
-    if (file) {
+    payload.append('tipoCarga', tipoCarga);
+    if (tipoCarga === 'archivo' && file) {
         payload.append('file', file);
+    }
+    if (tipoCarga === 'link' && link) {
+        payload.append('link', link);
     }
 
     try {
