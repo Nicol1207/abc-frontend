@@ -325,7 +325,7 @@ export default function Index() {
                       asChild
                       className="mt-2 w-full bg-[#008999] hover:bg-[#33b0bb] text-white font-bold flex items-center gap-2"
                     >
-                      <a href={`/temas/${tema.numero ?? tema.id}`}>
+                      <a href={`/temas/${tema.id_temas}`}>
                         <Eye className="w-5 h-5" />
                         Ver
                       </a>

@@ -140,7 +140,7 @@ export default function Index() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Gráfico de barras: Estudiantes con más puntos (ancho completo, barras verticales) */}
           <div className="bg-white rounded-lg shadow p-6 col-span-1 lg:col-span-3">
-            <h2 className="text-xl font-semibold mb-4 text-primary">Estudiantes con más puntos</h2>
+            <h2 className="text-xl font-semibold mb-4 text-primary">Estudiantes con más Recompensas</h2>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={estudiantesPuntos} margin={{ left: 30, right: 30 }}>
                 <XAxis dataKey="nombre" />

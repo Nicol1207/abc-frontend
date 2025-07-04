@@ -194,8 +194,8 @@ export default function Temas() {
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data && fetcher.data.success === "success") {
       toast({
-        title: "Eliminado",
-        description: "El contenido ha sido eliminado correctamente.",
+        title: fetcher.data.toast?.title,
+        description: fetcher.data.toast?.description,
       });
       window.location.reload();
     } else if (fetcher.state === "idle" && fetcher.data && fetcher.data.success === "error") {
@@ -515,7 +515,34 @@ export default function Temas() {
                 <img src={previewData.url} alt={previewData.title} className="max-h-96 max-w-full rounded-lg" />
               )}
               {previewData.type === "video" && (
-                <video src={previewData.url} controls className="max-h-96 max-w-full rounded-lg" />
+                previewData.url && !previewData.url.includes("localhost") && !previewData.url.startsWith("/") ? (
+                  <a
+                    href={previewData.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline text-lg"
+                  >
+                    Abrir video externo en otra pestaña
+                  </a>
+                ) : (
+                  <video controls className="max-h-96 max-w-full rounded-lg">
+                    <source src={previewData.url} type="video/mp4" />
+                    <track
+                      kind="subtitles"
+                      src={
+                        previewData.url
+                          ? previewData.url
+                              .replace(/^https?:\/\/[^/]+\/storage\//, "/")
+                              .replace(/\.[^.]+$/, ".vtt")
+                          : ""
+                      }
+                      srcLang="es"
+                      label="Español"
+                      default
+                    />
+                    Tu navegador no soporta la etiqueta de video.
+                  </video>
+                )
               )}
             </div>
           </DialogContent>

@@ -54,7 +54,7 @@ export default function Index() {
       userData={loaderData.user}
     >
       <div className="flex flex-col w-full h-full px-2 py-6">
-        <h1 className="text-4xl font-bold text-primary drop-shadow text-center rounded-xl px-6 py-6 mb-4 bg-white/80 shadow-md">
+        <h1 className="text-4xl font-bold text-primary drop-shadow text-center rounded-xl px-6 py-6 mb-4shadow-md">
           {`¡Bienvenido, ${user?.name || "Estudiante"}!`}
         </h1>
         <div className="flex flex-col md:flex-row gap-6 w-full max-w-5xl mx-auto mb-4">
@@ -90,16 +90,16 @@ export default function Index() {
         </div>
         <div className="flex flex-row gap-6 w-full max-w-5xl mx-auto justify-center mt-0">
           <DashboardButton
-            color="bg-blue-500"
-            hover="hover:bg-blue-600"
+            color="bg-[#fb6d00]"
+            hover="hover:bg-[#ff9000]"
             icon="📚"
             label="Temas"
             to="/student_themes"
             className="flex-1 min-w-[260px]"
           />
           <DashboardButton
-            color="bg-green-500"
-            hover="hover:bg-green-600"
+            color="bg-[#d90092]"
+            hover="hover:bg-[#ff47c0]"
             icon="📒✏️"
             label="Actividades"
             to="/activities"

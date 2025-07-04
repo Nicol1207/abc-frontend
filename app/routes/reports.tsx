@@ -138,7 +138,7 @@ export default function Index() {
         // Tabla de estudiantes con tiempo de conexión
         const estudiantes = curso.students || [];
         autoTable(doc, {
-          head: [["#", "Nombre", "Email/ID", "Tiempo de conexión (min)"]],
+          head: [["#", "Nombre", "Cédula", "Tiempo de conexión (min)"]],
           body: estudiantes.length > 0
             ? estudiantes.map((est: any, i: number) => [i + 1, est.name, est.email, est.tiempo_conexion ?? "-"])
             : [[{ content: "No hay estudiantes en el curso", colSpan: 4, styles: { halign: 'center', fontStyle: 'italic' } }]],
@@ -243,7 +243,7 @@ export default function Index() {
       ]);
 
       autoTable(doc, {
-        head: [["#", "Nombre", "Email/ID", "Total puntos"]],
+        head: [["#", "Nombre", "Cédula", "Total puntos"]],
         body: tableData.length > 0
           ? tableData
           : [[{ content: "No hay estudiantes en el curso", colSpan: 4, styles: { halign: 'center', fontStyle: 'italic' } }]],

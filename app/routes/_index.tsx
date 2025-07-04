@@ -61,8 +61,14 @@ export default function LoginForm() {
 
           {/* Login Form */}
           <Form method="POST" autoComplete="off" className="space-y-4">
+            
+
             <div>
-              <img src="/image.png" />
+              <img src="/image.png" className="w-32 h-32 object-cover mx-auto" />
+            </div>
+
+            <div className="text-center mb-4">
+              <h1 className="text-2xl font-bold text-teal-600">Iniciar Sesión</h1>
             </div>
 
             <div>

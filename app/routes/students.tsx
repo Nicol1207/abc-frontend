@@ -281,6 +281,9 @@ export default function Index() {
                     <th className="bg-[#d9f4f9] text-[#008999] font-bold text-lg py-3 px-4 text-left">
                       Tiempo de Conexión
                     </th>
+                    <th className="bg-[#d9f4f9] text-[#008999] font-bold text-lg py-3 px-4 text-left">
+                      Recompensas
+                    </th>
                     <th className="bg-[#d9f4f9] text-[#008999] font-bold text-lg py-3 px-4 text-left rounded-tr-xl">
                       Acciones
                     </th>
@@ -303,6 +306,9 @@ export default function Index() {
                         <td className="py-4 px-4">{item.email}</td>
                         <td className="py-4 px-4">
                           {item.connection_time ? item.connection_time : "N/A"}
+                        </td>
+                        <td className="py-4 px-4">
+                          {item.rewards ? item.rewards : 0}
                         </td>
                         <td className="py-4 px-4">
                           <div className="flex gap-2">
