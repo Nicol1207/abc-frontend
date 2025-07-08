@@ -80,6 +80,7 @@ export default function Index() {
       if (data.success === "success") {
         toast({ title: data.toast.title, description: data.toast.description });
         handleCloseRewardModal();
+        window.location.reload(); // Recargar la página para reflejar los cambios
       } else {
         toast({ title: data.toast.title, description: data.toast.description, variant: "destructive" });
       }

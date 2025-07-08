@@ -398,13 +398,13 @@ export default function Index() {
                               >
                                 <EditIcon className="w-4 h-4" />
                               </button>
-                              <button
+                              {/* <button
                                 className="bg-red-500 hover:bg-red-600 text-white rounded p-2 transition"
                                 title="Eliminar"
                                 onClick={() => handleDeleteStudent(est)}
                               >
                                 <TrashIcon className="w-4 h-4" />
-                              </button>
+                              </button> */}
                             </div>
                           </td>
                         </tr>

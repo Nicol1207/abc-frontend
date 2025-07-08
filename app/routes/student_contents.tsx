@@ -192,10 +192,10 @@ export default function Temas() {
     // Espera a que la petición termine antes de mostrar el contenido
     // Si quieres esperar la respuesta, puedes usar un useEffect sobre viewFetcher.data
     if (type === "image") {
-      setPreviewData({ type: "image", url: "http://localhost:3000/storage/" + item.url, title: item.titulo });
+      setPreviewData({ type: "image", url: item.url, title: item.titulo });
       setPreviewOpen(true);
     } else if (type === "video") {
-      setPreviewData({ type: "video", url: "http://localhost:3000/storage/" + item.url, title: item.titulo });
+      setPreviewData({ type: "video", url: item.url, title: item.titulo });
       setPreviewOpen(true);
     } else if (type === "text") {
       window.open(item.url, "_blank");
@@ -220,13 +220,13 @@ export default function Temas() {
                   <Card className="border-none shadow-none">
                     <CardHeader className="flex flex-row justify-between items-center p-0 mb-4">
                       <CardTitle className="text-2xl font-bold text-[#008999]">{getTabTitle("imagenes")}</CardTitle>
-                      <Button
+                      {/* <Button
                         className="bg-[#008999] hover:bg-[#33b0bb] text-white font-bold px-6 py-2 rounded-lg"
                         onClick={() => {setShowDialog(true); setContentType("1")}}
                         type="button"
                       >
                         Agregar contenido
-                      </Button>
+                      </Button> */}
                     </CardHeader>
                     <CardContent className="p-0">
                       <div className="overflow-x-auto">
@@ -273,13 +273,13 @@ export default function Temas() {
                   <Card className="border-none shadow-none">
                     <CardHeader className="flex flex-row justify-between items-center p-0 mb-4">
                       <CardTitle className="text-2xl font-bold text-[#008999]">{getTabTitle("videos")}</CardTitle>
-                      <Button
+                      {/* <Button
                         className="bg-[#008999] hover:bg-[#33b0bb] text-white font-bold px-6 py-2 rounded-lg"
                         onClick={() => {setShowDialog(true); setContentType("2")}}
                         type="button"
                       >
                         Agregar contenido
-                      </Button>
+                      </Button> */}
                     </CardHeader>
                     <CardContent className="p-0">
                       <div className="overflow-x-auto">
@@ -304,14 +304,27 @@ export default function Temas() {
                                 <td className="w-1/2 py-4 px-4 text-center">{item.titulo}</td>
                                 <td className="w-1/2 py-4 px-4 text-center">
                                   <div className="flex justify-center gap-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      title="Ver video"
-                                      onClick={() => handleViewContent(item, "video")}
-                                    >
-                                      <Eye />
-                                    </Button>
+                                    {item.url && !item.url.includes("localhost") && !item.url.startsWith("/") ? (
+                                      <Button
+                                        asChild
+                                        variant="ghost"
+                                        size="icon"
+                                        title="Ver video externo"
+                                      >
+                                        <a href={item.url} target="_blank" rel="noopener noreferrer">
+                                          <Eye />
+                                        </a>
+                                      </Button>
+                                    ) : (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        title="Ver video"
+                                        onClick={() => handleViewContent(item, "video")}
+                                      >
+                                        <Eye />
+                                      </Button>
+                                    )}
                                   </div>
                                 </td>
                               </tr>
@@ -326,13 +339,13 @@ export default function Temas() {
                   <Card className="border-none shadow-none">
                     <CardHeader className="flex flex-row justify-between items-center p-0 mb-4">
                       <CardTitle className="text-2xl font-bold text-[#008999]">{getTabTitle("textos")}</CardTitle>
-                      <Button
+                      {/* <Button
                         className="bg-[#008999] hover:bg-[#33b0bb] text-white font-bold px-6 py-2 rounded-lg"
                         onClick={() => {setShowDialog(true); setContentType("3")}}
                         type="button"
                       >
                         Agregar contenido
-                      </Button>
+                      </Button> */}
                     </CardHeader>
                     <CardContent className="p-0">
                       <div className="overflow-x-auto">

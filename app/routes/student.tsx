@@ -81,9 +81,11 @@ export default function Index() {
             <CardContent className="flex-1">
               <div className="flex flex-col items-center justify-center h-40 w-full">
                 <div className="italic text-lg text-indigo-900 text-center max-w-xs flex items-center h-full">
-                  "The best way to predict the future is to create it."
+                  {loaderData.student.data.frase.frase_es}
                 </div>
-                <div className="text-sm text-indigo-400 mt-2 text-center w-full">- Peter Drucker</div>
+                <div className="italic text-lg text-indigo-900 text-center max-w-xs flex items-center h-full">
+                  {loaderData.student.data.frase.frase_en}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -95,16 +97,16 @@ export default function Index() {
             icon="📚"
             label="Temas"
             to="/student_themes"
-            className="flex-1 min-w-[260px]"
+            className="min-w-[260px] w-1/2"
           />
-          <DashboardButton
+          {/* <DashboardButton
             color="bg-[#d90092]"
             hover="hover:bg-[#ff47c0]"
             icon="📒✏️"
             label="Actividades"
             to="/activities"
             className="flex-1 min-w-[260px]"
-          />
+          /> */}
         </div>
       </div>
     </AppLayout>
