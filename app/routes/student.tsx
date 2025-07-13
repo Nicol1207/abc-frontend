@@ -97,7 +97,15 @@ export default function Index() {
             icon="📚"
             label="Temas"
             to="/student_themes"
-            className="min-w-[260px] w-1/2"
+            className="min-w-[260px] w-1/3"
+          />
+          <DashboardButton
+            color="bg-[#9c27b0]"
+            hover="hover:bg-[#ba68c8]"
+            icon="🧠"
+            label="Juego de Memoria"
+            to="/memory-levels"
+            className="min-w-[260px] w-1/3"
           />
           {/* <DashboardButton
             color="bg-[#d90092]"
