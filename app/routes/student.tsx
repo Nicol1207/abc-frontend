@@ -97,7 +97,7 @@ export default function Index() {
             icon="📚"
             label="Temas"
             to="/student_themes"
-            className="min-w-[260px] w-1/3"
+            className="min-w-[200px] w-1/4"
           />
           <DashboardButton
             color="bg-[#9c27b0]"
@@ -105,15 +105,23 @@ export default function Index() {
             icon="🧠"
             label="Juego de Memoria"
             to="/memory-levels"
-            className="min-w-[260px] w-1/3"
+            className="min-w-[200px] w-1/4"
           />
           <DashboardButton
             color="bg-[#2196f3]"
             hover="hover:bg-[#42a5f5]"
-            icon="�"
+            icon="🔍"
             label="Sopa de Letras"
             to="/word-search"
-            className="min-w-[260px] w-1/3"
+            className="min-w-[200px] w-1/4"
+          />
+          <DashboardButton
+            color="bg-[#4caf50]"
+            hover="hover:bg-[#66bb6a]"
+            icon="🧩"
+            label="Crucigrama"
+            to="/crossword"
+            className="min-w-[200px] w-1/4"
           />
         </div>
       </div>
