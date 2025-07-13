@@ -107,14 +107,14 @@ export default function Index() {
             to="/memory-levels"
             className="min-w-[260px] w-1/3"
           />
-          {/* <DashboardButton
-            color="bg-[#d90092]"
-            hover="hover:bg-[#ff47c0]"
-            icon="📒✏️"
-            label="Actividades"
-            to="/activities"
-            className="flex-1 min-w-[260px]"
-          /> */}
+          <DashboardButton
+            color="bg-[#2196f3]"
+            hover="hover:bg-[#42a5f5]"
+            icon="�"
+            label="Sopa de Letras"
+            to="/word-search"
+            className="min-w-[260px] w-1/3"
+          />
         </div>
       </div>
     </AppLayout>
