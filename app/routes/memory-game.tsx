@@ -196,9 +196,9 @@ export default function MemoryGame() {
               variant="outline"
               className="flex items-center gap-2"
             >
-              <a href="/student">
+              <a href="/activities">
                 <Home className="w-4 h-4" />
-                Volver al inicio
+                Volver a actividades
               </a>
             </Button>
           </div>
@@ -206,7 +206,7 @@ export default function MemoryGame() {
         </div>
 
         {/* Panel de estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card className="bg-blue-50 border-blue-200">
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-blue-600">{moves}</div>
@@ -230,17 +230,6 @@ export default function MemoryGame() {
                 }
               </div>
               <div className="text-sm text-purple-800">Tiempo</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-orange-50 border-orange-200">
-            <CardContent className="p-4 text-center">
-              <Button
-                onClick={initializeGame}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Nuevo Juego
-              </Button>
             </CardContent>
           </Card>
         </div>
@@ -324,10 +313,10 @@ export default function MemoryGame() {
                 </div>
                 <div className="flex gap-4">
                   <Button
-                    onClick={initializeGame}
-                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+                    className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white"
+                    onClick={() => {/* Aquí puedes agregar la lógica para obtener la recompensa */}}
                   >
-                    Jugar de Nuevo
+                    Obtener recompensa
                   </Button>
                   <Button
                     asChild
