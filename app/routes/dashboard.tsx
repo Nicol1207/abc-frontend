@@ -1,9 +1,8 @@
-
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import AppLayout from "~/layouts/AppLayout";
-import React from "react";
+import React, { useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from "recharts";
@@ -11,6 +10,9 @@ import {
 import { currentToken, getSidebar, requireAdmin, requireAuth, user } from "~/services/auth.server";
 import { Separator } from "~/components/ui/separator";
 import { ChartAreaIcon } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "~/components/ui/dialog";
+import { generarPDFRecompensasPorCurso, generarPDFListadoCursos } from "~/lib/reportesPDF";
 
 export const meta: MetaFunction = () => {
   return [
@@ -30,8 +32,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const apiUrl = process.env.API_URL || "http://localhost:3000/api/dashboard";
   const cookie = request.headers.get("cookie") || "";
   let dashboardData;
+  let cursos = [];
+  let token;
   try {
-    const token = await currentToken({request});
+    token = await currentToken({request});
+    // Dashboard principal
     const res = await fetch(apiUrl, {
       headers: {
         Cookie: cookie,
@@ -42,15 +47,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
     if (!res.ok) {
       const errorText = await res.text();
-      // Mostrar error detallado en la terminal
       console.error(`Error al cargar dashboard (${res.status}):`, errorText);
       throw new Error(`Error al cargar dashboard (${res.status}): ${errorText}`);
     }
     dashboardData = await res.json();
+    // Obtener cursos activos para el select de reportes
+    const cursosRes = await fetch("http://localhost:3000/api/courses", {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (cursosRes.ok) {
+      const data = await cursosRes.json();
+      cursos = data.data || [];
+    }
   } catch (err: any) {
-    // Mostrar error detallado en la terminal
-    console.error("Error en fetch dashboard:", err);
-    throw new Error(`Error en fetch dashboard: ${err?.message || err}`);
+    console.error("Error en fetch dashboard/cursos:", err);
+    throw new Error(`Error en fetch dashboard/cursos: ${err?.message || err}`);
   }
 
   return json({
@@ -60,6 +74,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     },
     sidebar: sidebar,
     dashboard: dashboardData,
+    cursos,
+    token,
   });
 }
 
@@ -75,49 +91,55 @@ export default function Index() {
   const cantidadEstudiantes = dashboard.cantidadEstudiantes || 0;
   const pieColors = ["#0097a7", "#26c6da", "#80deea", "#b2ebf2"];
 
+  const [openRecompensas, setOpenRecompensas] = React.useState(false);
+  const [openCursos, setOpenCursos] = React.useState(false);
+  const [cursoSeleccionado, setCursoSeleccionado] = React.useState("");
+  const [cursoListado, setCursoListado] = React.useState("all");
+  const [generando, setGenerando] = React.useState(false);
+
   return (
     <AppLayout
       sidebarOptions={loaderData.sidebar}
       userData={loaderData.user}
     >
-      <div className="w-full max-w-7xl mx-auto py-8">
-        <div className="flex flex-col mb-4">
+      <div className="w-full max-w-7xl mx-auto py-4 overflow-hidden">
+        <div className="flex flex-col mb-2">
           <h1 className="text-4xl font-bold text-primary flex flex-row items-center gap-5"> <ChartAreaIcon size={32} /> Dashboard</h1>
-          <Separator className="my-4 bg-[#004d5a]" />
+          <Separator className="my-2 bg-[#004d5a]" />
         </div>
         {/* Cards resumen */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-            <span className="text-3xl font-bold text-primary">{cantidadProfesores}</span>
-            <span className="text-gray-600 mt-2">Profesores</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+          <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+            <span className="text-2xl font-bold text-primary">{cantidadProfesores}</span>
+            <span className="text-gray-600 mt-2 text-sm">Profesores</span>
           </div>
-          <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-            <span className="text-3xl font-bold text-primary">{cantidadCursos}</span>
-            <span className="text-gray-600 mt-2">Cursos activos</span>
+          <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+            <span className="text-2xl font-bold text-primary">{cantidadCursos}</span>
+            <span className="text-gray-600 mt-2 text-sm">Cursos activos</span>
           </div>
-          <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-            <span className="text-3xl font-bold text-primary">{cantidadEstudiantes}</span>
-            <span className="text-gray-600 mt-2">Estudiantes totales</span>
+          <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+            <span className="text-2xl font-bold text-primary">{cantidadEstudiantes}</span>
+            <span className="text-gray-600 mt-2 text-sm">Estudiantes totales</span>
           </div>
         </div>
-        {/* Gráficos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Gráficos en una sola fila */}
+        <div className="flex flex-col lg:flex-row gap-3 mb-4">
           {/* Gráfico de barras: Estudiantes con más accesos */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4 text-primary">Estudiantes con más accesos al software</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={estudiantesAccesos} layout="vertical" margin={{ left: 30, right: 30 }}>
-                <XAxis type="number" />
-                <YAxis dataKey="nombre" type="category" width={120} />
+          <div className="bg-white rounded-lg shadow p-4 flex-1 min-w-[280px]">
+            <h2 className="text-lg font-semibold mb-2 text-primary">Estudiantes con más accesos al software</h2>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={estudiantesAccesos} layout="vertical" margin={{ left: 20, right: 20 }}>
+                <XAxis type="number" fontSize={12} />
+                <YAxis dataKey="nombre" type="category" width={80} fontSize={12} />
                 <RechartsTooltip />
-                <Bar dataKey="accesos" fill="#0097a7" />
+                <Bar dataKey="accesos" fill="#0097a7" barSize={18} />
               </BarChart>
             </ResponsiveContainer>
           </div>
           {/* Gráfico de pastel: Material más utilizado */}
-          <div className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
-            <h2 className="text-xl font-semibold mb-4 text-primary text-center">Material más utilizado por los estudiantes</h2>
-            <ResponsiveContainer width="100%" height={300}>
+          <div className="bg-white rounded-lg shadow p-4 flex-1 min-w-[280px] flex flex-col items-center">
+            <h2 className="text-lg font-semibold mb-2 text-primary text-center">Material más utilizado por los estudiantes</h2>
+            <ResponsiveContainer width="100%" height={180}>
               <PieChart>
                 <Pie
                   data={materialesUtilizados}
@@ -125,33 +147,139 @@ export default function Index() {
                   nameKey="nombre"
                   cx="50%"
                   cy="50%"
-                  outerRadius={100}
-                  label
+                  outerRadius={60}
+                  label={false}
                 >
                   {materialesUtilizados.map((entry: { nombre: string; usos: number }, index: number) => (
                     <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
                   ))}
                 </Pie>
-                <Legend />
+                <Legend fontSize={12} />
                 <RechartsTooltip />
               </PieChart>
             </ResponsiveContainer>
           </div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Gráfico de barras: Estudiantes con más puntos (ancho completo, barras verticales) */}
-          <div className="bg-white rounded-lg shadow p-6 col-span-1 lg:col-span-3">
-            <h2 className="text-xl font-semibold mb-4 text-primary">Estudiantes con más Recompensas</h2>
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={estudiantesPuntos} margin={{ left: 30, right: 30 }}>
-                <XAxis dataKey="nombre" />
-                <YAxis />
+          {/* Gráfico de barras: Estudiantes con más puntos (horizontal, altura ajustada) */}
+          <div className="bg-white rounded-lg shadow p-4 flex-1 min-w-[280px]">
+            <h2 className="text-lg font-semibold mb-2 text-primary">Estudiantes con más Recompensas</h2>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={estudiantesPuntos} layout="vertical" margin={{ left: 40, right: 20 }}>
+                <XAxis type="number" fontSize={12} />
+                <YAxis dataKey="nombre" type="category" width={120} fontSize={12} />
                 <RechartsTooltip />
-                <Bar dataKey="puntos" fill="#26c6da" />
+                <Bar dataKey="puntos" fill="#26c6da" barSize={18} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
+        {/* Cards de reportes PDF */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          {/* Card: Reporte de recompensas por curso */}
+          <div className="bg-white rounded-lg shadow flex flex-col h-full p-4">
+            <div className="mb-2">
+              <span className="font-bold text-lg">Recompensas de estudiantes por curso</span>
+              <p className="text-sm text-gray-600">Genera un reporte PDF con el total de recompensas obtenidas por los estudiantes de un curso específico.</p>
+            </div>
+            <div className="flex-1" />
+            <div className="mt-auto">
+              <button
+                className="w-full bg-[#008999] hover:bg-[#33b0bb] text-white py-2 rounded"
+                onClick={() => setOpenRecompensas(true)}
+              >Generar reporte</button>
+            </div>
+          </div>
+          {/* Card: Listado de cursos */}
+          <div className="bg-white rounded-lg shadow flex flex-col h-full p-4">
+            <div className="mb-2">
+              <span className="font-bold text-lg">Listado de cursos</span>
+              <p className="text-sm text-gray-600">Descarga un PDF con el listado de todos los cursos activos y sus profesores, o de un curso específico.</p>
+            </div>
+            <div className="flex-1" />
+            <div className="mt-auto">
+              <button
+                className="w-full bg-[#008999] hover:bg-[#33b0bb] text-white py-2 rounded"
+                onClick={() => setOpenCursos(true)}
+              >Generar reporte</button>
+            </div>
+          </div>
+        </div>
+        {/* Modales para selección de curso y generación de PDF */}
+        <Dialog open={openRecompensas} onOpenChange={setOpenRecompensas}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Selecciona el curso</DialogTitle>
+            </DialogHeader>
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                if (cursoSeleccionado) {
+                  generarPDFRecompensasPorCurso({ cursoId: cursoSeleccionado, token: loaderData.token, cursos: loaderData.cursos });
+                  setOpenRecompensas(false);
+                }
+              }}
+              className="flex flex-col gap-4"
+            >
+              <select
+                className="border border-gray-300 rounded-lg px-3 py-2 bg-white text-black"
+                value={cursoSeleccionado}
+                onChange={e => setCursoSeleccionado(e.target.value)}
+                required
+              >
+                <option value="">-- Selecciona un curso --</option>
+                {loaderData.cursos?.map((curso: any) => (
+                  <option key={curso.id} value={curso.id}>
+                    {curso.section} - {curso.teacher?.name || "Sin profesor"}
+                  </option>
+                ))}
+              </select>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setOpenRecompensas(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={!cursoSeleccionado || generando} className="bg-[#008999] hover:bg-[#33b0bb] text-white">
+                  {generando ? "Generando..." : "Generar PDF"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={openCursos} onOpenChange={setOpenCursos}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Generar PDF de cursos</DialogTitle>
+            </DialogHeader>
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                generarPDFListadoCursos({ cursoId: cursoListado, token: loaderData.token, cursosData: loaderData.cursos });
+                setOpenCursos(false);
+              }}
+              className="flex flex-col gap-4"
+            >
+              <label className="font-semibold">Selecciona un curso o todos:</label>
+              <select
+                className="border border-gray-300 rounded-lg px-3 py-2 bg-white text-black"
+                value={cursoListado}
+                onChange={e => setCursoListado(e.target.value)}
+              >
+                <option value="all">Todos los cursos</option>
+                {loaderData.cursos?.map((curso: any) => (
+                  <option key={curso.id} value={curso.id}>
+                    {curso.section} - {curso.teacher?.name || "Sin profesor"}
+                  </option>
+                ))}
+              </select>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setOpenCursos(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={generando} className="bg-[#008999] hover:bg-[#33b0bb] text-white">
+                  {generando ? "Generando..." : "Generar PDF"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
