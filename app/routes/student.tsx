@@ -9,7 +9,7 @@ import { Star } from "lucide-react";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "ABC English" },
+    { title: "ABC Media" },
     { name: "description", content: "Sistema educativo de inglés" },
   ];
 };

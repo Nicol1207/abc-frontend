@@ -18,7 +18,7 @@ import { useNavigate } from "@remix-run/react";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Sopa de Letras - ABC English" },
+    { title: "ABC Media" },
     { name: "description", content: "Encuentra palabras en inglés en divertidas sopas de letras" },
   ];
 };

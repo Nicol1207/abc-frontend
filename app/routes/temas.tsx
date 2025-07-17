@@ -10,11 +10,11 @@ import { Separator } from "~/components/ui/separator";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { getContents } from "~/services/loaders/teacher.server";
 import { toast } from "~/hooks/use-toast";
-import { Eye } from "lucide-react";
+import { Book, Eye } from "lucide-react";
 import { Dialog as ConfirmDialog, DialogContent as ConfirmDialogContent, DialogHeader as ConfirmDialogHeader, DialogTitle as ConfirmDialogTitle, DialogFooter as ConfirmDialogFooter } from "~/components/ui/dialog";
 
 export const meta: MetaFunction = () => [
-  { title: "ABC English" },
+  { title: "ABC Media" },
   { name: "description", content: "Sistema educativo de inglés" },
 ];
 
@@ -62,7 +62,7 @@ export default function Temas() {
   const [contentType, setContentType] = useState<string>("1"); // 1: imagen, 2: video, 3: texto
   const [dragActive, setDragActive] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewData, setPreviewData] = useState<{ type: "image" | "video" | null, url: string, title: string }>({ type: null, url: "", title: "" });
+  const [previewData, setPreviewData] = useState<{ type: "image" | "video" | "pdf" | null, url: string, title: string }>({ type: null, url: "", title: "" });
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -167,7 +167,7 @@ export default function Temas() {
   }, [fetcher.state, fetcher.data]);
 
   // Función para abrir el modal de vista previa
-  function handlePreview(type: "image" | "video", url: string, title: string) {
+  function handlePreview(type: "image" | "video" | "pdf", url: string, title: string) {
     setPreviewData({ type, url, title });
     setPreviewOpen(true);
   }
@@ -211,7 +211,7 @@ export default function Temas() {
     <AppLayout sidebarOptions={loaderData.sidebar} userData={loaderData.user}>
       <div className="w-full max-w-6xl mx-auto py-8">
         <div className="flex flex-col mb-4">
-          <h1 className="text-4xl font-bold text-primary">Contenidos por Tema</h1>
+          <h1 className="text-4xl font-bold text-primary flex flex-row items-center gap-5"> <Book size={32} /> Contenidos por Tema</h1>
           <Separator className="my-4 bg-[#004d5a]" />
           <div className="w-full border border-[#197080] rounded-xl overflow-hidden bg-white">
             <Tabs value={tab} onValueChange={setTab} className="w-full">
@@ -388,7 +388,13 @@ export default function Temas() {
                                       variant="ghost"
                                       size="icon"
                                       title="Ver archivo"
-                                      onClick={() => window.open(item.url, "_blank")}
+                                      onClick={() => {
+                                        if (item.url && item.url.toLowerCase().endsWith('.pdf')) {
+                                          handlePreview("pdf", item.url, item.titulo);
+                                        } else {
+                                          window.open(item.url, "_blank");
+                                        }
+                                      }}
                                     >
                                       <Eye />
                                     </Button>
@@ -506,7 +512,7 @@ export default function Temas() {
         </Dialog>
         {/* Modal de vista previa */}
         <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-          <DialogContent>
+            <DialogContent className={previewData.type === "pdf" ? "max-w-5xl w-full" : ""}>
             <DialogHeader>
               <DialogTitle>Vista previa: {previewData.title}</DialogTitle>
             </DialogHeader>
@@ -543,6 +549,15 @@ export default function Temas() {
                     Tu navegador no soporta la etiqueta de video.
                   </video>
                 )
+              )}
+              {previewData.type === "pdf" && (
+                <iframe
+                  src={previewData.url}
+                  title={previewData.title}
+                  width="100%"
+                  height="700px"
+                  style={{ border: "none", minWidth: "900px", maxWidth: "1200px", maxHeight: "700px" }}
+                />
               )}
             </div>
           </DialogContent>

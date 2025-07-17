@@ -10,10 +10,11 @@ import {
 
 import { currentToken, getSidebar, requireAdmin, requireAuth, user } from "~/services/auth.server";
 import { Separator } from "~/components/ui/separator";
+import { ChartAreaIcon } from "lucide-react";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "ABC English" },
+    { title: "ABC Media" },
     { name: "description", content: "Sistema educativo de inglés" },
   ];
 };
@@ -81,7 +82,7 @@ export default function Index() {
     >
       <div className="w-full max-w-7xl mx-auto py-8">
         <div className="flex flex-col mb-4">
-          <h1 className="text-4xl font-bold text-primary">Dashboard</h1>
+          <h1 className="text-4xl font-bold text-primary flex flex-row items-center gap-5"> <ChartAreaIcon size={32} /> Dashboard</h1>
           <Separator className="my-4 bg-[#004d5a]" />
         </div>
         {/* Cards resumen */}

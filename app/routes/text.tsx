@@ -8,7 +8,7 @@ import { Separator } from "~/components/ui/separator";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "ABC English" },
+    { title: "ABC Media" },
     { name: "description", content: "Sistema educativo de inglés" },
   ];
 };

@@ -15,7 +15,7 @@ import { useParams } from "@remix-run/react";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Crucigrama - ABC English" },
+    { title: "Crucigrama - ABC Media" },
     { name: "description", content: "Resuelve crucigramas en inglés y practica tu vocabulario" },
   ];
 };

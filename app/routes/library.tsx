@@ -5,7 +5,7 @@ import { getSidebar, requireAuth, requireTeacher, user } from "~/services/auth.s
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Plus, Eye } from "lucide-react";
+import { Plus, Eye, Library } from "lucide-react";
 import { Separator } from "~/components/ui/separator";
 import { getLibrary } from "~/services/loaders/teacher.server";
 import { useFetcher } from "@remix-run/react";
@@ -13,7 +13,7 @@ import { toast } from "~/hooks/use-toast";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "ABC English" },
+    { title: "ABC Media" },
     { name: "description", content: "Sistema educativo de inglés" },
   ];
 };
@@ -201,7 +201,7 @@ export default function Index() {
     >
       <div className="w-full max-w-6xl mx-auto py-8">
         <div className="flex flex-col mb-4">
-          <h1 className="text-4xl font-bold text-primary">Biblioteca</h1>
+          <h1 className="text-4xl font-bold text-primary flex flex-row items-center gap-5"> <Library size={32} /> Biblioteca</h1>
           <Separator className="my-4 bg-[#004d5a]" />
           <div className="flex gap-4 flex-wrap self-end">
             {/* Menú desplegable para filtrar por tipo de contenido */}

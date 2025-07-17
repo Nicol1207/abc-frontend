@@ -10,7 +10,7 @@ import { getThemes } from "~/services/loaders/student.server"; // Make sure this
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "ABC English" },
+    { title: "ABC Media" },
     { name: "description", content: "Sistema educativo de inglés" },
   ];
 };

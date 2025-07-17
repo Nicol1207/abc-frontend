@@ -15,7 +15,7 @@ import { useNavigate } from "@remix-run/react";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Juego de Memoria - ABC English" },
+    { title: "ABC Media" },
     { name: "description", content: "Mejora tu vocabulario en inglés con nuestro juego de memoria" },
   ];
 };

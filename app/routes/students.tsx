@@ -3,7 +3,7 @@ import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import AppLayout from "~/layouts/AppLayout";
 import { Button } from "~/components/ui/button";
-import { EditIcon, TrashIcon } from "lucide-react";
+import { EditIcon, TrashIcon, UserPen } from "lucide-react";
 import {
   getSidebar,
   requireAuth,
@@ -17,7 +17,7 @@ import { toast } from "~/hooks/use-toast";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "ABC English" },
+    { title: "ABC Media" },
     { name: "description", content: "Sistema educativo de inglés" },
   ];
 };
@@ -255,7 +255,7 @@ export default function Index() {
     >
       <div className="w-full max-w-6xl mx-auto py-8">
         <div className="flex flex-col mb-4">
-          <h1 className="text-4xl font-bold text-primary">Estudiantes</h1>
+          <h1 className="text-4xl font-bold text-primary flex flex-row items-center gap-5"> <UserPen size={32} /> Estudiantes</h1>
           <Separator className="my-4 bg-[#004d5a]" />
           <div className="w-full border border-[#197080] rounded-xl overflow-hidden bg-white">
             <div className="bg-[#d9f4f9] flex justify-between px-10 py-6 items-center">
@@ -341,7 +341,7 @@ export default function Index() {
                         </td>
       {/* Modal para asignar recompensa */}
       {showRewardModal && studentReward && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md relative">
             <h2 className="text-2xl font-bold mb-4 text-green-600">
               Asignar Recompensa
@@ -360,10 +360,27 @@ export default function Index() {
                 <input
                   type="number"
                   min={1}
+                  max={5}
                   value={rewardAmount}
-                  onChange={e => setRewardAmount(Number(e.target.value))}
+                  onChange={e => {
+                    const value = e.target.value;
+                    // Solo permitir números enteros entre 1 y 5
+                    if (/^\d+$/.test(value)) {
+                      const num = Number(value);
+                      if (num >= 1 && num <= 5) {
+                        setRewardAmount(num);
+                      } else if (num < 1) {
+                        setRewardAmount(1);
+                      } else if (num > 5) {
+                        setRewardAmount(5);
+                      }
+                    } else if (value === "") {
+                      setRewardAmount(1);
+                    }
+                  }}
                   className="w-full border border-green-500 rounded-lg px-3 py-2 bg-white text-black focus:outline-none focus:ring-2 focus:ring-green-500"
                   required
+                  // max={5}
                 />
               </div>
               <div className="flex gap-4 justify-end mt-2">
@@ -395,7 +412,7 @@ export default function Index() {
         </div>
         {/* Modal para añadir estudiante */}
         {showAddModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
             <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md relative">
               <h2 className="text-2xl font-bold mb-4 text-[#008999]">
                 Añadir Estudiante
@@ -464,7 +481,7 @@ export default function Index() {
         )}
         {/* Modal para editar estudiante */}
         {showEditModal && estudianteEdit && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
             <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md relative">
               <h2 className="text-2xl font-bold mb-4 text-[#008999]">
                 Editar Estudiante
@@ -526,7 +543,7 @@ export default function Index() {
         )}
         {/* Modal para confirmar eliminación */}
         {showDeleteModal && studentToDelete && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
             <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md relative">
               <h2 className="text-2xl font-bold mb-4 text-[#ef4444]">
                 Confirmar Eliminación

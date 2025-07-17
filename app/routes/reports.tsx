@@ -9,10 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import AppLayout from "~/layouts/AppLayout";
 import { currentToken, getSidebar, requireAdmin, requireAuth, user } from "~/services/auth.server";
 import { Separator } from "~/components/ui/separator";
+import { Text } from "lucide-react";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "ABC English" },
+    { title: "ABC Media" },
     { name: "description", content: "Sistema educativo de inglés" },
   ];
 };
@@ -377,7 +378,7 @@ export default function Index() {
       userData={loaderData.user}
     >
       <div className="w-full py-8">
-        <h1 className="text-4xl font-bold text-primary">Reportes</h1>
+        <h1 className="text-4xl font-bold text-primary flex flex-row items-center gap-5"> <Text size={32} /> Reportes</h1>
         <Separator className="my-4 bg-[#004d5a]" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Card: Reporte de recompensas por curso */}

@@ -12,7 +12,7 @@ import { Trophy, Star, Lock, Home } from "lucide-react";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Niveles de Memoria - ABC English" },
+    { title: "ABC Media" },
     { name: "description", content: "Desafía tu memoria con diferentes niveles de dificultad" },
   ];
 };

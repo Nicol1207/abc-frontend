@@ -14,7 +14,7 @@ import { Eye } from "lucide-react";
 import { Dialog as ConfirmDialog, DialogContent as ConfirmDialogContent, DialogHeader as ConfirmDialogHeader, DialogTitle as ConfirmDialogTitle, DialogFooter as ConfirmDialogFooter } from "~/components/ui/dialog";
 
 export const meta: MetaFunction = () => [
-  { title: "ABC English" },
+  { title: "ABC Media" },
   { name: "description", content: "Sistema educativo de inglés" },
 ];
 

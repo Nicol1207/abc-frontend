@@ -11,9 +11,10 @@ import { Button } from "~/components/ui/button";
 import EmojiPicker from "emoji-picker-react"; // Importa el componente de emoji
 import { toast } from "~/hooks/use-toast";
 import { useFetcher, useNavigate } from "@remix-run/react";
+import { Notebook } from "lucide-react";
 
 export const meta: MetaFunction = () => [
-  { title: "Actividades | ABC English" },
+  { title: "Actividades | ABC Media" },
   { name: "description", content: "Actividades creadas por el profesor" },
 ];
 
@@ -214,7 +215,7 @@ export default function Activities() {
         <div className="w-full max-w-6xl mx-auto py-8">
           <div className="flex flex-col mb-4">
             <div className="w-full flex justify-between">
-              <h1 className="text-4xl font-bold text-primary">Actividades</h1>
+              <h1 className="text-4xl font-bold text-primary flex flex-row items-center gap-5"> <Notebook size={32} /> Actividades</h1>
               <button
                 className={`bg-[#008999] text-white hover:bg-[#006f7a] transition-colors px-4 py-2 rounded shadow ${loaderData.user.role_id === 3 ? "hidden" : ""}`}
                 onClick={() => setShowCustomDialog(true)}

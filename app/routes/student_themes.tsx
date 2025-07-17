@@ -7,10 +7,11 @@ import AppLayout from "~/layouts/AppLayout";
 import { getSidebar, requireAuth, user } from "~/services/auth.server";
 import { Separator } from "~/components/ui/separator";
 import { getThemes } from "~/services/loaders/student.server"; // Make sure this path is correct
+import { Book } from "lucide-react";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "ABC English" },
+    { title: "ABC Media" },
     { name: "description", content: "Sistema educativo de inglés" },
   ];
 };
@@ -59,7 +60,7 @@ export default function Index() {
     >
       <div className="w-full max-w-6xl mx-auto py-8">
         <div className="flex flex-col mb-4">
-          <h1 className="text-4xl font-bold text-primary">Temas</h1>
+          <h1 className="text-4xl font-bold text-primary flex flex-row items-center gap-5"> <Book size={32} /> Temas</h1>
           <Separator className="my-4 bg-[#004d5a]" />
         </div>
 

@@ -1,7 +1,7 @@
 // Remix Core Imports
 import { Link, useLoaderData } from "@remix-run/react";
 import { useFetcher } from "@remix-run/react";
-import { SquareLibrary } from 'lucide-react';
+import { BookOpen, SquareLibrary } from 'lucide-react';
 import { Images } from 'lucide-react';
 import { Video } from 'lucide-react';
 import { BookA } from 'lucide-react';
@@ -40,7 +40,7 @@ import {
 } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
 
-const icons = [<UserPen />, <SquareLibrary />, <Images />,  <Video />, <BookA />, <House/>, <Text />];
+const icons = [<UserPen />, <SquareLibrary />, <Images />,  <BookOpen />, <BookA />, <House/>, <Text />];
 
 export default function AppSidebar({
   sidebarOptions,
@@ -123,7 +123,7 @@ export default function AppSidebar({
                 className="h-12"
               />
               <div className="flex flex-col">
-                <div className="flex h-full font-bold gap-2">ABC English</div>
+                <div className="flex h-full font-bold gap-2">ABC Media</div>
                 <div>Sistema Educativo</div>
               </div>
             </SidebarMenuButton>
