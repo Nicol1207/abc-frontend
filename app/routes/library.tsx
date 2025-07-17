@@ -26,7 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const sidebar = await getSidebar({ request });
   const library = await getLibrary({ request });
 
-  console.log("Library data:", library);
+  console.log("Library data:", library.data);
 
   return {
     user: {
@@ -96,6 +96,10 @@ export default function Index() {
     color: "#008999",
     descripcion: "",
   });
+
+  // Estado para mostrar/ocultar el modal de eliminación de tema
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [temaAEliminar, setTemaAEliminar] = useState<any>(null);
 
   const recursosFiltrados = recursos.filter((r) => {
     const tipoOk = filtroTipo === "todos" || r.tipo === filtroTipo;
@@ -193,6 +197,27 @@ export default function Index() {
       });
     }
   }, [fetcher.state, fetcher.data]);
+
+  function handleEliminarTema(tema: any) {
+    setTemaAEliminar(tema);
+    setShowDeleteModal(true);
+  }
+
+  function confirmarEliminarTema() {
+    if (temaAEliminar?.id_temas) {
+      fetcher.submit(
+        {},
+        { method: "post", action: `/api/themes/delete/${temaAEliminar.id_temas}` }
+      );
+    }
+    setShowDeleteModal(false);
+    setTemaAEliminar(null);
+  }
+
+  function cancelarEliminarTema() {
+    setShowDeleteModal(false);
+    setTemaAEliminar(null);
+  }
 
   return (
     <AppLayout
@@ -305,6 +330,32 @@ export default function Index() {
             </div>
           </div>
         )}
+        {/* Modal de confirmación de eliminación de tema */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md relative">
+              <h2 className="text-2xl font-bold mb-4 text-red-600">¿Eliminar tema?</h2>
+              <p className="mb-6 text-black">¿Estás seguro que deseas eliminar el tema <span className="font-bold">{temaAEliminar?.titulo}</span>? Esta acción no se puede deshacer.</p>
+              <div className="flex gap-4 justify-end mt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-red-600 text-red-600 hover:bg-red-100"
+                  onClick={cancelarEliminarTema}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  className="bg-red-600 text-white font-bold hover:bg-red-700"
+                  onClick={confirmarEliminarTema}
+                >
+                  Eliminar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filtroTipo === "temas" ? (
             temas.length === 0 ? (
@@ -313,7 +364,7 @@ export default function Index() {
               </div>
             ) : (
               temas.map((tema: any) => (
-                <Card key={tema.id || tema.numero} className={`transition-transform duration-200 hover:scale-105 hover:shadow-lg border border-[#008999]`} style={{ backgroundColor: tema.color || "#e0f7fa" }}>
+                <Card key={tema.id_temas || tema.numero} className={`transition-transform duration-200 hover:scale-105 hover:shadow-lg border border-[#008999]`} style={{ backgroundColor: tema.color || "#e0f7fa" }}>
                   <CardHeader>
                     <CardTitle className={`text-lg font-bold text-black`}>
                       Tema #{tema.numero ?? tema.id}: {tema.titulo}
@@ -321,15 +372,25 @@ export default function Index() {
                   </CardHeader>
                   <CardContent>
                     <div className="mb-2 text-sm text-black">{tema.descripcion}</div>
-                    <Button
-                      asChild
-                      className="mt-2 w-full bg-[#008999] hover:bg-[#33b0bb] text-white font-bold flex items-center gap-2"
-                    >
-                      <a href={`/temas/${tema.id_temas}`}>
-                        <Eye className="w-5 h-5" />
-                        Ver
-                      </a>
-                    </Button>
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        asChild
+                        className="w-full bg-[#008999] hover:bg-[#33b0bb] text-white font-bold flex items-center gap-2"
+                      >
+                        <a href={`/temas/${tema.id_temas}`}>
+                          <Eye className="w-5 h-5" />
+                          Ver
+                        </a>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold flex items-center gap-2"
+                        onClick={() => handleEliminarTema(tema)}
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))

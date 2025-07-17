@@ -37,6 +37,7 @@ export default defineConfig({
           route("/api/teacher/asignar_recompensa", "routes/api/teacher/asignar_recompensa.server.ts");
           route("/api/activities/create", "routes/api/activities/create.server.ts");
           route("/api/activities/getreward/:id", "routes/api/activities/getreward.server.ts");
+          route("/api/themes/delete/:id", "routes/api/teacher/delete_theme.server.ts");
 
           // Frontend Routes
           route("/temas/:id", "routes/temas.tsx");
