@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -49,10 +49,10 @@ const levelConfig = {
   },
 };
 
-export function WordSearchGame({ level, category, onComplete }: WordSearchProps) {
+export function WordSearchGame({ level, category, onComplete, words: externalWords }: WordSearchProps & { words?: WordPair[] }) {
   const config = levelConfig[level];
   const [grid, setGrid] = useState<CellState[][]>([]);
-  const [words, setWords] = useState<WordPair[]>([]);
+  const [words, setWords] = useState<WordPair[]>(externalWords || []);
   const [wordPositions, setWordPositions] = useState<WordPosition[]>([]);
   const [foundWords, setFoundWords] = useState<string[]>([]);
   const [isSelecting, setIsSelecting] = useState(false);
@@ -62,6 +62,9 @@ export function WordSearchGame({ level, category, onComplete }: WordSearchProps)
   const [gameStarted, setGameStarted] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
   const [score, setScore] = useState(0);
+  const initialized = useRef(false);
+  // Bloquear interacción si el juego está completo
+  const isBlocked = gameComplete;
 
   // Generar letras aleatorias
   const getRandomLetter = () => {
@@ -136,7 +139,12 @@ export function WordSearchGame({ level, category, onComplete }: WordSearchProps)
 
   // Generar sopa de letras
   const generateWordSearch = useCallback(() => {
-    const selectedWords = getRandomWordsFromCategory(category, config.wordsCount);
+    let selectedWords: WordPair[];
+    if (externalWords && externalWords.length > 0) {
+      selectedWords = externalWords;
+    } else {
+      selectedWords = getRandomWordsFromCategory(category, config.wordsCount);
+    }
     setWords(selectedWords);
 
     // Crear grid vacío
@@ -200,12 +208,16 @@ export function WordSearchGame({ level, category, onComplete }: WordSearchProps)
     setGameComplete(false);
     setTimeLeft(config.timeLimit);
     setGameStarted(false);
-  }, [category, config.gridSize, config.wordsCount, config.timeLimit]);
+  }, [category, config.gridSize, config.wordsCount, config.timeLimit, externalWords]);
 
-  // Inicializar juego
+  // Inicializar juego SOLO una vez
   useEffect(() => {
-    generateWordSearch();
-  }, [generateWordSearch]);
+    if (!initialized.current) {
+      generateWordSearch();
+      initialized.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Timer
   useEffect(() => {
@@ -232,12 +244,10 @@ export function WordSearchGame({ level, category, onComplete }: WordSearchProps)
       const timeBonus = timeLeft * 2;
       const finalScore = foundWords.length * 100 + timeBonus;
       setScore(finalScore);
-      
       toast({
         title: "🎉 ¡Felicitaciones!",
-        description: `¡Has encontrado todas las palabras! Puntuación: ${finalScore}`,
+        description: `¡Has encontrado todas las palabras!`,
       });
-      
       onComplete(finalScore);
     }
   }, [foundWords.length, words.length, timeLeft, gameComplete, onComplete]);
@@ -307,6 +317,7 @@ export function WordSearchGame({ level, category, onComplete }: WordSearchProps)
 
   // Manejar inicio de selección
   const handleMouseDown = (row: number, col: number) => {
+    if (isBlocked) return;
     if (!gameStarted) setGameStarted(true);
     setIsSelecting(true);
     setSelectionStart({ row, col });
@@ -315,6 +326,7 @@ export function WordSearchGame({ level, category, onComplete }: WordSearchProps)
 
   // Manejar movimiento del mouse
   const handleMouseEnter = (row: number, col: number) => {
+    if (isBlocked) return;
     if (isSelecting && selectionStart) {
       setSelectionEnd({ row, col });
     }
@@ -322,17 +334,16 @@ export function WordSearchGame({ level, category, onComplete }: WordSearchProps)
 
   // Manejar fin de selección
   const handleMouseUp = () => {
+    if (isBlocked) return;
     if (isSelecting && selectionStart && selectionEnd) {
       const selectedCells = getCellsInLine(selectionStart, selectionEnd);
       if (selectedCells.length > 1) {
         checkWordFound(selectedCells);
       }
     }
-    
     setIsSelecting(false);
     setSelectionStart(null);
     setSelectionEnd(null);
-    
     // Limpiar selección visual
     setGrid(prev => prev.map(row => 
       row.map(cell => ({ ...cell, isSelected: false, isHighlighted: false }))
@@ -372,16 +383,13 @@ export function WordSearchGame({ level, category, onComplete }: WordSearchProps)
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto">
-      <div className="flex flex-col xl:flex-row gap-6">
+    <div className="w-full max-w-4xl mx-auto">
+      <div className="flex flex-col md:flex-row gap-8 items-start">
         {/* Grid de sopa de letras */}
-        <div className="flex-1">
-          {/* Grid */}
+        <div className="flex-1 flex flex-col items-center">
           <div 
-            className="inline-block border-2 border-gray-300 bg-white select-none rounded-lg overflow-hidden shadow-lg"
-            style={{ 
-              fontSize: Math.max(12, 20 - config.gridSize * 0.3) + 'px',
-            }}
+            className={`inline-block border-2 border-gray-300 bg-white select-none rounded-lg overflow-hidden shadow-lg mb-6 ${isBlocked ? 'pointer-events-none opacity-70' : ''}`}
+            style={{ fontSize: Math.max(12, 20 - config.gridSize * 0.3) + 'px' }}
             onMouseLeave={handleMouseUp}
           >
             {grid.map((row, rowIndex) => (
@@ -408,32 +416,32 @@ export function WordSearchGame({ level, category, onComplete }: WordSearchProps)
             ))}
           </div>
         </div>
-
         {/* Panel lateral */}
-        <div className="w-full xl:w-80 space-y-4">
-          {/* Estadísticas */}
-          <WordSearchStats
-            timeLeft={timeLeft}
-            totalTime={config.timeLimit}
-            foundWords={foundWords.length}
-            totalWords={words.length}
-            score={score}
-            level={level}
-            onNewGame={generateWordSearch}
-          />
-          
-          {/* Lista de palabras */}
-          <WordList
-            words={words.map(w => ({
-              english: w.english,
-              spanish: w.spanish,
-              emoji: w.emoji,
-            }))}
-            foundWords={foundWords}
-          />
+        <div className="w-full md:w-72 bg-white rounded-lg shadow p-4 border border-gray-200 flex flex-col gap-4">
+          {/* Palabras a encontrar */}
+          <div>
+            <h2 className="text-lg font-bold mb-3 text-center text-[#008999]">Palabras a encontrar</h2>
+            <ul className="flex flex-wrap gap-2 max-h-40 overflow-y-auto justify-center">
+              {words.map((w, idx) => (
+                <li
+                  key={idx}
+                  className={`flex flex-col items-center justify-center px-2 py-1 rounded min-w-[90px] max-w-[120px] text-center border transition-colors duration-150
+                    ${foundWords.includes(w.english.toUpperCase()) ? 'bg-green-100 text-green-700 line-through border-green-200' : 'bg-gray-50 text-gray-800 border-gray-200'}`}
+                >
+                  <span className="text-2xl mb-1">{w.emoji}</span>
+                  <span className="font-semibold leading-tight">{w.english}</span>
+                  <span className="text-xs text-gray-500 leading-tight">{w.spanish}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {/* Progreso y tiempo */}
+          <div className="flex flex-col items-center gap-2 mt-4">
+            <div className="text-sm text-gray-700">Palabras encontradas: <span className="font-bold">{foundWords.length} / {words.length}</span></div>
+            <div className="text-sm text-gray-700">Tiempo restante: <span className="font-bold">{formatTime(timeLeft)}</span></div>
+          </div>
         </div>
       </div>
-
       {/* Resultado del juego */}
       {gameComplete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -452,17 +460,8 @@ export function WordSearchGame({ level, category, onComplete }: WordSearchProps)
                     : `Encontraste ${foundWords.length} de ${words.length} palabras`
                   }
                 </p>
-                <p className="text-gray-600">
-                  Puntuación final: <span className="font-bold text-yellow-600">{score}</span>
-                </p>
               </div>
               <div className="flex gap-4">
-                <Button
-                  onClick={generateWordSearch}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
-                >
-                  Jugar de Nuevo
-                </Button>
                 <Button
                   onClick={() => window.history.back()}
                   variant="outline"

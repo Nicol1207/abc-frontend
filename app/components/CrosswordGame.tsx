@@ -6,10 +6,18 @@ import { getRandomWordsFromCategory, type WordPair } from "~/data/vocabulary";
 import { toast } from "~/hooks/use-toast";
 import { Clock, Target, Trophy, RotateCcw, CheckCircle } from "lucide-react";
 
+
 interface CrosswordProps {
   level: 'easy' | 'medium' | 'hard';
   category: string;
   onComplete: (score: number) => void;
+  words?: WordPair[];
+}
+
+interface WordPair {
+  english: string;
+  spanish: string;
+  emoji?: string;
 }
 
 interface CrosswordWord {
@@ -54,7 +62,7 @@ const levelConfig = {
   },
 };
 
-export function CrosswordGame({ level, category, onComplete }: CrosswordProps) {
+export function CrosswordGame({ level, category, onComplete, words: externalWords }: CrosswordProps) {
   const config = levelConfig[level];
   const [grid, setGrid] = useState<CellData[][]>([]);
   const [words, setWords] = useState<CrosswordWord[]>([]);
@@ -68,9 +76,15 @@ export function CrosswordGame({ level, category, onComplete }: CrosswordProps) {
   const [hints, setHints] = useState<{[key: number]: number}>({});
 
   // Generar crucigrama
+
   const generateCrossword = useCallback(() => {
-    const selectedWords = getRandomWordsFromCategory(category, config.wordsCount);
-    
+    let selectedWords: WordPair[] = [];
+    if (Array.isArray(externalWords) && externalWords.length > 0) {
+      selectedWords = externalWords;
+    } else {
+      selectedWords = getRandomWordsFromCategory(category, config.wordsCount);
+    }
+
     // Crear grid vacío
     const newGrid: CellData[][] = Array(config.gridSize).fill(null).map(() =>
       Array(config.gridSize).fill(null).map(() => ({
@@ -133,7 +147,7 @@ export function CrosswordGame({ level, category, onComplete }: CrosswordProps) {
 
           crosswordWords.push({
             word: word,
-            clue: `${wordPair.emoji} ${wordPair.spanish}`,
+            clue: `${wordPair.emoji ? wordPair.emoji + ' ' : ''}${wordPair.spanish}`,
             answer: word,
             direction: direction,
             startRow: startRow,
@@ -158,11 +172,12 @@ export function CrosswordGame({ level, category, onComplete }: CrosswordProps) {
     setTimeLeft(config.timeLimit);
     setGameStarted(false);
     setHints({});
-  }, [category, config.gridSize, config.wordsCount, config.timeLimit]);
+  }, [category, config.gridSize, config.wordsCount, config.timeLimit, externalWords]);
 
   // Inicializar juego
   useEffect(() => {
     generateCrossword();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generateCrossword]);
 
   // Timer
@@ -194,7 +209,6 @@ export function CrosswordGame({ level, category, onComplete }: CrosswordProps) {
       
       toast({
         title: "🎉 ¡Felicitaciones!",
-        description: `¡Has completado el crucigrama! Puntuación: ${finalScore}`,
       });
       
       onComplete(finalScore);
@@ -204,7 +218,6 @@ export function CrosswordGame({ level, category, onComplete }: CrosswordProps) {
   // Manejar entrada de texto
   const handleCellInput = (row: number, col: number, value: string) => {
     if (!gameStarted) setGameStarted(true);
-    
     const upperValue = value.toUpperCase();
     if (upperValue.length > 1) return;
 
@@ -215,38 +228,90 @@ export function CrosswordGame({ level, category, onComplete }: CrosswordProps) {
         userInput: upperValue,
         isCorrect: upperValue === newGrid[row][col].letter,
       };
+
+      // Verificar palabras completadas y si el juego termina justo al escribir esta letra
+      words.forEach(word => {
+        if (completedWords.includes(word.number)) return;
+        let isComplete = true;
+        for (let i = 0; i < word.word.length; i++) {
+          const r = word.direction === 'down' ? word.startRow + i : word.startRow;
+          const c = word.direction === 'across' ? word.startCol + i : word.startCol;
+          if ((r === row && c === col ? upperValue : newGrid[r][c].userInput) !== word.word[i]) {
+            isComplete = false;
+            break;
+          }
+        }
+        if (isComplete) {
+          setCompletedWords(prev => {
+            if (!prev.includes(word.number)) {
+              if (prev.length + 1 === words.length) {
+                setTimeout(() => {
+                  setGameComplete(true);
+                  const timeBonus = timeLeft * 2;
+                  const hintPenalty = Object.keys(hints).length * 25;
+                  const finalScore = Math.max(0, (prev.length + 1) * 100 + timeBonus - hintPenalty);
+                  setScore(finalScore);
+                  toast({
+                    title: "🎉 ¡Felicitaciones!",
+                  });
+                  onComplete(finalScore);
+                }, 0);
+              }
+              return [...prev, word.number];
+            }
+            return prev;
+          });
+          toast({
+            title: "✅ ¡Palabra completada!",
+            description: `${word.word} - ${word.clue}`,
+          });
+        }
+      });
+
+      // Enfocar siguiente celda de la palabra si existe
+      setTimeout(() => {
+        // Buscar si la celda pertenece a alguna palabra no completada
+        const word = words.find(w => {
+          if (completedWords.includes(w.number)) return false;
+          for (let i = 0; i < w.word.length; i++) {
+            const r = w.direction === 'down' ? w.startRow + i : w.startRow;
+            const c = w.direction === 'across' ? w.startCol + i : w.startCol;
+            if (r === row && c === col) return true;
+          }
+          return false;
+        });
+        if (!word) return;
+        // Buscar el índice de la letra actual en la palabra
+        let idx = -1;
+        for (let i = 0; i < word.word.length; i++) {
+          const r = word.direction === 'down' ? word.startRow + i : word.startRow;
+          const c = word.direction === 'across' ? word.startCol + i : word.startCol;
+          if (r === row && c === col) {
+            idx = i;
+            break;
+          }
+        }
+        if (idx === -1) return;
+        // Buscar la siguiente celda vacía de la palabra
+        for (let j = idx + 1; j < word.word.length; j++) {
+          const r = word.direction === 'down' ? word.startRow + j : word.startRow;
+          const c = word.direction === 'across' ? word.startCol + j : word.startCol;
+          if (newGrid[r][c].userInput === '' && !newGrid[r][c].isBlocked) {
+            const nextInput = document.querySelector(
+              `input[data-row='${r}'][data-col='${c}']`
+            ) as HTMLInputElement | null;
+            if (nextInput) nextInput.focus();
+            return;
+          }
+        }
+      }, 10);
+
       return newGrid;
     });
-
-    // Verificar palabras completadas
-    checkCompletedWords();
   };
 
-  // Verificar palabras completadas
-  const checkCompletedWords = () => {
-    words.forEach(word => {
-      if (completedWords.includes(word.number)) return;
-
-      let isComplete = true;
-      for (let i = 0; i < word.word.length; i++) {
-        const row = word.direction === 'down' ? word.startRow + i : word.startRow;
-        const col = word.direction === 'across' ? word.startCol + i : word.startCol;
-        
-        if (grid[row][col].userInput !== word.word[i]) {
-          isComplete = false;
-          break;
-        }
-      }
-
-      if (isComplete) {
-        setCompletedWords(prev => [...prev, word.number]);
-        toast({
-          title: "✅ ¡Palabra completada!",
-          description: `${word.word} - ${word.clue}`,
-        });
-      }
-    });
-  };
+  // Verificar palabras completadas (ya no se usa, la lógica está en handleCellInput)
+  // const checkCompletedWords = () => {};
 
   // Usar pista
   const useHint = (wordNumber: number) => {
@@ -305,29 +370,11 @@ export function CrosswordGame({ level, category, onComplete }: CrosswordProps) {
 
   return (
     <div className="w-full max-w-7xl mx-auto">
-      <div className="flex flex-col xl:flex-row gap-6">
+      <div className="flex flex-col xl:flex-row gap-6 items-start">
         {/* Grid del crucigrama */}
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-4">
-            <Badge className={`${getLevelColor()} bg-gray-100`}>
-              Nivel {level === 'easy' ? 'Fácil' : level === 'medium' ? 'Medio' : 'Difícil'}
-            </Badge>
-            <div className="flex items-center gap-4 text-sm">
-              <span>Tiempo: <strong>{formatTime(timeLeft)}</strong></span>
-              <span>Completadas: <strong>{completedWords.length}/{words.length}</strong></span>
-            </div>
-          </div>
-
-          {/* Barra de progreso */}
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-            <div 
-              className="h-2 rounded-full bg-green-500 transition-all duration-300"
-              style={{ width: `${words.length > 0 ? (completedWords.length / words.length) * 100 : 0}%` }}
-            />
-          </div>
-
-          {/* Grid */}
+        <div className="flex-1 flex justify-center">
           <div className="inline-block border-2 border-gray-300 bg-white rounded-lg overflow-hidden shadow-lg">
+            {/* ...existing code... */}
             {grid.map((row, rowIndex) => (
               <div key={rowIndex} className="flex">
                 {row.map((cell, colIndex) => (
@@ -366,6 +413,8 @@ export function CrosswordGame({ level, category, onComplete }: CrosswordProps) {
                           maxLength={1}
                           value={cell.userInput}
                           onChange={(e) => handleCellInput(rowIndex, colIndex, e.target.value)}
+                          data-row={rowIndex}
+                          data-col={colIndex}
                           className={`
                             w-full h-full text-center font-bold text-lg bg-transparent border-none outline-none
                             ${cell.isCorrect ? 'text-green-700' : 'text-gray-800'}
@@ -380,13 +429,12 @@ export function CrosswordGame({ level, category, onComplete }: CrosswordProps) {
             ))}
           </div>
         </div>
-
-        {/* Panel lateral */}
-        <div className="w-full xl:w-80">
-          {/* Estadísticas */}
-          <Card className="mb-4">
+        {/* Panel lateral combinado */}
+        <div className="w-1/2 xl:max-w-xs xl:sticky xl:top-8 xl:self-start">
+          <Card>
             <CardContent className="p-4">
-              <div className="space-y-3">
+              {/* Estadísticas */}
+              <div className="space-y-3 mb-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Clock className="w-5 h-5 text-blue-500" />
@@ -396,7 +444,6 @@ export function CrosswordGame({ level, category, onComplete }: CrosswordProps) {
                     {formatTime(timeLeft)}
                   </div>
                 </div>
-                
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Target className="w-5 h-5 text-green-500" />
@@ -406,33 +453,9 @@ export function CrosswordGame({ level, category, onComplete }: CrosswordProps) {
                     {completedWords.length}/{words.length}
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-yellow-500" />
-                    <span className="font-semibold">Puntuación</span>
-                  </div>
-                  <div className="text-lg font-bold text-yellow-600">
-                    {score}
-                  </div>
-                </div>
               </div>
-
-              <Button
-                onClick={generateCrossword}
-                className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-2"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Nuevo Crucigrama
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Lista de pistas */}
-          <Card>
-            <CardContent className="p-4">
+              {/* Lista de pistas */}
               <h3 className="font-bold text-lg mb-4">Pistas:</h3>
-              
               {/* Horizontales */}
               <div className="mb-4">
                 <h4 className="font-semibold text-md mb-2">Horizontales:</h4>
@@ -478,7 +501,6 @@ export function CrosswordGame({ level, category, onComplete }: CrosswordProps) {
                   ))}
                 </div>
               </div>
-
               {/* Verticales */}
               <div>
                 <h4 className="font-semibold text-md mb-2">Verticales:</h4>
@@ -547,9 +569,7 @@ export function CrosswordGame({ level, category, onComplete }: CrosswordProps) {
                     : `Completaste ${completedWords.length} de ${words.length} palabras`
                   }
                 </p>
-                <p className="text-gray-600">
-                  Puntuación final: <span className="font-bold text-yellow-600">{score}</span>
-                </p>
+                
                 {Object.keys(hints).length > 0 && (
                   <p className="text-sm text-gray-500">
                     Pistas usadas: {Object.values(hints).reduce((sum, count) => sum + count, 0)}
@@ -558,10 +578,10 @@ export function CrosswordGame({ level, category, onComplete }: CrosswordProps) {
               </div>
               <div className="flex gap-4">
                 <Button
-                  onClick={generateCrossword}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+                  onClick={() => {/* Aquí puedes disparar la lógica de recompensa */ window.history.back(); }}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                 >
-                  Nuevo Crucigrama
+                  Obtener recompensa
                 </Button>
                 <Button
                   onClick={() => window.history.back()}

@@ -35,6 +35,7 @@ export default defineConfig({
           route("/api/teacher/eliminar_contenido", "routes/api/teacher/eliminar_contenido.server.ts");
           route("/api/student/view_content", "routes/api/student/view_content.server.ts");
           route("/api/teacher/asignar_recompensa", "routes/api/teacher/asignar_recompensa.server.ts");
+          route("/api/activities/create", "routes/api/activities/create.server.ts");
 
           // Frontend Routes
           route("/temas/:id", "routes/temas.tsx");
@@ -42,6 +43,8 @@ export default defineConfig({
           route("/images/:theme", "routes/images/[theme].tsx");
           route("/videos/:theme", "routes/videos/[theme].tsx");
           route("/texts/:theme", "routes/texts/[theme].tsx");
+          route("/activities/wordsearch/:id", "routes/word-search.tsx");
+          route("/activities/crossword/:id", "routes/crossword.tsx");
         });
       },
     }),

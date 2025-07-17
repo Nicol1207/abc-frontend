@@ -68,3 +68,19 @@ export async function getContents({request, theme_id}: any) {
         return {};
     }
 }
+
+export async function getActivities({ request }: any) {
+  let response: any = {};
+    try {
+        const token = await currentToken({ request });
+        response = await axios.get('/api/teacher/activities', {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        return response.data;
+    } catch (error: any) {
+        console.log('Error cargando las actividades:', error.response);
+        return [];
+    }
+}
