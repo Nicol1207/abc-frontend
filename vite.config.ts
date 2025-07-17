@@ -45,6 +45,7 @@ export default defineConfig({
           route("/texts/:theme", "routes/texts/[theme].tsx");
           route("/activities/wordsearch/:id", "routes/word-search.tsx");
           route("/activities/crossword/:id", "routes/crossword.tsx");
+          route("/activities/memory/:id", "routes/memory-game.tsx");
         });
       },
     }),

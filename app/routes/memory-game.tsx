@@ -8,6 +8,7 @@ import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { Trophy, RotateCcw, Home } from "lucide-react";
 import { toast } from "~/hooks/use-toast";
+import { getMemory } from "~/services/loaders/memories";
 
 export const meta: MetaFunction = () => {
   return [
@@ -16,32 +17,25 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, params }: LoaderFunctionArgs) {
   await requireAuth({ request });
 
   const u = await user({ request });
   const sidebar = await getSidebar({ request });
+  const memoryData = await getMemory({ request, activityId: params.id });
 
+  // Aseguramos que el loader retorne memoryData como array de palabras
   return {
     user: {
       ...u.user,
       role: u.role,
     },
     sidebar: sidebar,
+    memoryData: memoryData.data, // <-- aquí debe estar el array de palabras
   };
 }
 
-// Palabras para el juego con traducciones
-const gameWords = [
-  { id: 1, english: "Cat", spanish: "Gato", emoji: "🐱" },
-  { id: 2, english: "Dog", spanish: "Perro", emoji: "🐶" },
-  { id: 3, english: "House", spanish: "Casa", emoji: "🏠" },
-  { id: 4, english: "Tree", spanish: "Árbol", emoji: "🌳" },
-  { id: 5, english: "Car", spanish: "Carro", emoji: "🚗" },
-  { id: 6, english: "Book", spanish: "Libro", emoji: "📚" },
-  { id: 7, english: "Sun", spanish: "Sol", emoji: "☀️" },
-  { id: 8, english: "Moon", spanish: "Luna", emoji: "🌙" },
-];
+// Las palabras del juego ahora vienen del backend vía loader
 
 interface Card {
   id: string;
@@ -61,13 +55,22 @@ export default function MemoryGame() {
   const [gameComplete, setGameComplete] = useState(false);
   const [timeStarted, setTimeStarted] = useState<number | null>(null);
   const [timeCompleted, setTimeCompleted] = useState<number | null>(null);
+  const [pairStatus, setPairStatus] = useState<'correct' | 'incorrect' | null>(null);
 
-  // Función para barajar las cartas
+  // Función para barajar las cartas usando datos del backend
   const shuffleCards = useCallback(() => {
+    // Remapear las palabras del backend
+    const backendWords = loaderData.memoryData?.words || [];
+    const mappedWords = backendWords.map((w: any, idx: number) => ({
+      id: w.id ?? idx + 1,
+      english: w.english_word,
+      spanish: w.spanish_word,
+      emoji: w.emoji || '',
+      category: '', // Se deja vacío
+    }));
+
     const gameCards: Card[] = [];
-    
-    // Crear cartas en inglés y español para cada palabra
-    gameWords.forEach((word) => {
+    mappedWords.forEach((word) => {
       gameCards.push({
         id: `${word.id}-en`,
         content: `${word.emoji} ${word.english}`,
@@ -85,11 +88,10 @@ export default function MemoryGame() {
         isMatched: false,
       });
     });
-
     // Barajar las cartas
     const shuffled = gameCards.sort(() => Math.random() - 0.5);
     return shuffled;
-  }, []);
+  }, [loaderData.memoryData]);
 
   // Inicializar el juego
   const initializeGame = useCallback(() => {
@@ -121,13 +123,13 @@ export default function MemoryGame() {
     // Si se voltearon 2 cartas, verificar coincidencia
     if (newFlippedCards.length === 2) {
       setMoves(prev => prev + 1);
-      
+      const [firstCardId, secondCardId] = newFlippedCards;
+      const firstCard = cards.find(c => c.id === firstCardId);
+      const secondCard = cards.find(c => c.id === secondCardId);
+      const isCorrect = firstCard && secondCard && firstCard.wordId === secondCard.wordId;
+      setPairStatus(isCorrect ? 'correct' : 'incorrect');
       setTimeout(() => {
-        const [firstCardId, secondCardId] = newFlippedCards;
-        const firstCard = cards.find(c => c.id === firstCardId);
-        const secondCard = cards.find(c => c.id === secondCardId);
-
-        if (firstCard && secondCard && firstCard.wordId === secondCard.wordId) {
+        if (isCorrect) {
           // ¡Coincidencia encontrada!
           setCards(prevCards =>
             prevCards.map(card =>
@@ -137,14 +139,14 @@ export default function MemoryGame() {
             )
           );
           setMatches(prev => prev + 1);
-          
           toast({
             title: "¡Excelente!",
             description: `Has encontrado una pareja: ${firstCard.type === 'english' ? firstCard.content.split(' ').slice(1).join(' ') : secondCard.content.split(' ').slice(1).join(' ')}`,
           });
 
           // Verificar si el juego está completo
-          if (matches + 1 === gameWords.length) {
+          const backendWords = loaderData.memoryData?.words || [];
+          if (matches + 1 === backendWords.length) {
             setGameComplete(true);
             setTimeCompleted(Date.now());
             toast({
@@ -162,8 +164,8 @@ export default function MemoryGame() {
             )
           );
         }
-
         setFlippedCards([]);
+        setPairStatus(null);
       }, 1000);
     }
   };
@@ -213,7 +215,7 @@ export default function MemoryGame() {
           </Card>
           <Card className="bg-green-50 border-green-200">
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-600">{matches}/{gameWords.length}</div>
+              <div className="text-2xl font-bold text-green-600">{matches}/{loaderData.memoryData?.words?.length || 0}</div>
               <div className="text-sm text-green-800">Parejas encontradas</div>
             </CardContent>
           </Card>
@@ -256,37 +258,50 @@ export default function MemoryGame() {
 
         {/* Tablero de juego */}
         <div className="grid grid-cols-4 gap-4 max-w-4xl mx-auto">
-          {cards.map((card) => (
-            <Card
-              key={card.id}
-              className={`
-                h-24 cursor-pointer transform transition-all duration-300 hover:scale-105 
-                ${card.isFlipped || card.isMatched 
-                  ? card.type === 'english' 
-                    ? 'bg-blue-100 border-blue-300' 
-                    : 'bg-green-100 border-green-300'
-                  : 'bg-gray-100 border-gray-300 hover:bg-gray-200'
-                }
-                ${card.isMatched ? 'opacity-75 ring-2 ring-yellow-400' : ''}
-              `}
-              onClick={() => handleCardClick(card.id)}
-            >
-              <CardContent className="p-0 h-full flex items-center justify-center">
-                {card.isFlipped || card.isMatched ? (
-                  <div className="text-center">
-                    <div className="text-lg font-semibold">
-                      {card.content}
+          {cards.map((card) => {
+            // Animación visual para las cartas seleccionadas
+            let animationClass = '';
+            let animationStyle = {};
+            if (flippedCards.includes(card.id) && pairStatus === 'correct') {
+              animationClass = 'animate-pulse bg-green-200 border-green-400';
+            } else if (flippedCards.includes(card.id) && pairStatus === 'incorrect') {
+              animationClass = 'bg-red-200 border-red-400 animate-shake';
+              animationStyle = { animation: 'shake 0.5s' };
+            }
+            return (
+              <Card
+                key={card.id}
+                className={`
+                  h-24 cursor-pointer transform transition-all duration-300 hover:scale-105 
+                  ${card.isFlipped || card.isMatched 
+                    ? card.type === 'english' 
+                      ? 'bg-blue-100 border-blue-300' 
+                      : 'bg-green-100 border-green-300'
+                    : 'bg-gray-100 border-gray-300 hover:bg-gray-200'
+                  }
+                  ${card.isMatched ? 'opacity-75 ring-2 ring-yellow-400' : ''}
+                  ${animationClass}
+                `}
+                style={animationStyle}
+                onClick={() => handleCardClick(card.id)}
+              >
+                <CardContent className="p-0 h-full flex items-center justify-center">
+                  {card.isFlipped || card.isMatched ? (
+                    <div className="text-center">
+                      <div className="text-lg font-semibold">
+                        {card.content}
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {card.type === 'english' ? 'Inglés' : 'Español'}
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-600 mt-1">
-                      {card.type === 'english' ? 'Inglés' : 'Español'}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-4xl">?</div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  ) : (
+                    <div className="text-4xl">?</div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Modal de victoria */}
