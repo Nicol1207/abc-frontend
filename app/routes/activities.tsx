@@ -19,7 +19,6 @@ export const meta: MetaFunction = () => [
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireAuth({ request });
-  await requireTeacher({ request });
 
   const u = await user({ request });
   const sidebar = await getSidebar({ request });
@@ -217,7 +216,7 @@ export default function Activities() {
             <div className="w-full flex justify-between">
               <h1 className="text-4xl font-bold text-primary">Actividades</h1>
               <button
-                className="bg-[#008999] text-white hover:bg-[#006f7a] transition-colors px-4 py-2 rounded shadow"
+                className={`bg-[#008999] text-white hover:bg-[#006f7a] transition-colors px-4 py-2 rounded shadow ${loaderData.user.role_id === 3 ? "hidden" : ""}`}
                 onClick={() => setShowCustomDialog(true)}
               >
                 Agregar actividad

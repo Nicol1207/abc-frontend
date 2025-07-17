@@ -36,6 +36,7 @@ export default defineConfig({
           route("/api/student/view_content", "routes/api/student/view_content.server.ts");
           route("/api/teacher/asignar_recompensa", "routes/api/teacher/asignar_recompensa.server.ts");
           route("/api/activities/create", "routes/api/activities/create.server.ts");
+          route("/api/activities/getreward/:id", "routes/api/activities/getreward.server.ts");
 
           // Frontend Routes
           route("/temas/:id", "routes/temas.tsx");

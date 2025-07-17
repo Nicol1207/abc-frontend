@@ -5,6 +5,8 @@ import { Badge } from "~/components/ui/badge";
 import { getRandomWordsFromCategory, type WordPair } from "~/data/vocabulary";
 import { toast } from "~/hooks/use-toast";
 import { Clock, Target, Trophy, RotateCcw, CheckCircle } from "lucide-react";
+import { useFetcher } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 
 
 interface CrosswordProps {
@@ -12,6 +14,7 @@ interface CrosswordProps {
   category: string;
   onComplete: (score: number) => void;
   words?: WordPair[];
+  activityId: number;
 }
 
 interface WordPair {
@@ -62,8 +65,10 @@ const levelConfig = {
   },
 };
 
-export function CrosswordGame({ level, category, onComplete, words: externalWords }: CrosswordProps) {
+export function CrosswordGame({ level, category, onComplete, words: externalWords, activityId }: CrosswordProps) {
+  const fetcher = useFetcher<any>();
   const config = levelConfig[level];
+  const navigate = useNavigate();
   const [grid, setGrid] = useState<CellData[][]>([]);
   const [words, setWords] = useState<CrosswordWord[]>([]);
   const [selectedWord, setSelectedWord] = useState<number | null>(null);
@@ -74,6 +79,14 @@ export function CrosswordGame({ level, category, onComplete, words: externalWord
   const [gameComplete, setGameComplete] = useState(false);
   const [score, setScore] = useState(0);
   const [hints, setHints] = useState<{[key: number]: number}>({});
+
+  const handleGetReward = () => {
+    fetcher.submit(
+      {},
+      { method: "POST", action: `/api/activities/getreward/${activityId}` }
+    );
+    navigate("/activities");
+  }
 
   // Generar crucigrama
 
@@ -578,7 +591,7 @@ export function CrosswordGame({ level, category, onComplete, words: externalWord
               </div>
               <div className="flex gap-4">
                 <Button
-                  onClick={() => {/* Aquí puedes disparar la lógica de recompensa */ window.history.back(); }}
+                  onClick={() => {handleGetReward();}}
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                 >
                   Obtener recompensa

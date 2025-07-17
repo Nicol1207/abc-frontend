@@ -9,6 +9,9 @@ import { Separator } from "~/components/ui/separator";
 import { Trophy, RotateCcw, Home } from "lucide-react";
 import { toast } from "~/hooks/use-toast";
 import { getMemory } from "~/services/loaders/memories";
+import { useFetcher } from "@remix-run/react";
+import { useParams } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 
 export const meta: MetaFunction = () => {
   return [
@@ -47,7 +50,10 @@ interface Card {
 }
 
 export default function MemoryGame() {
+  const {id} = useParams<any>();
+  const fetcher = useFetcher<any>();
   const loaderData = useLoaderData<any>();
+  const navigate = useNavigate();
   const [cards, setCards] = useState<Card[]>([]);
   const [flippedCards, setFlippedCards] = useState<string[]>([]);
   const [matches, setMatches] = useState(0);
@@ -70,7 +76,7 @@ export default function MemoryGame() {
     }));
 
     const gameCards: Card[] = [];
-    mappedWords.forEach((word) => {
+    mappedWords.forEach((word: any) => {
       gameCards.push({
         id: `${word.id}-en`,
         content: `${word.emoji} ${word.english}`,
@@ -176,6 +182,14 @@ export default function MemoryGame() {
     const minutes = Math.floor(seconds / 60);
     return `${minutes}:${(seconds % 60).toString().padStart(2, '0')}`;
   };
+
+  const handleGetReward = () => {
+    fetcher.submit(
+      {},
+      { method: "POST", action: "/api/activities/getreward/"+id }
+    );
+    navigate("/activities");
+  }
 
   // Inicializar juego al cargar
   useEffect(() => {
@@ -314,7 +328,7 @@ export default function MemoryGame() {
                 <div className="flex gap-4">
                   <Button
                     className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white"
-                    onClick={() => {/* Aquí puedes agregar la lógica para obtener la recompensa */}}
+                    onClick={() => {handleGetReward();}}
                   >
                     Obtener recompensa
                   </Button>

@@ -11,6 +11,7 @@ import { CrosswordGame } from "~/components/CrosswordGame";
 import { Home, Grid, Star, Trophy } from "lucide-react";
 import { vocabulary } from "~/data/vocabulary";
 import { getCrossword } from "~/services/loaders/crossword";
+import { useParams } from "@remix-run/react";
 
 export const meta: MetaFunction = () => {
   return [
@@ -63,6 +64,8 @@ interface GameSession {
 
 export default function CrosswordLevels() {
   const loaderData = useLoaderData<any>();
+  const {id} = useParams<any>();
+
   // Renderiza solo el crucigrama con los datos del loader
   return (
     <AppLayout
@@ -88,6 +91,7 @@ export default function CrosswordLevels() {
           category={loaderData.crossword.category}
           words={loaderData.crossword.words}
           onComplete={() => {}}
+          activityId={parseInt(id || "0")} // Asegúrate de pasar el ID de la actividad
         />
       </div>
     </AppLayout>

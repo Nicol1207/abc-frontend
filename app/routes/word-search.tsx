@@ -12,6 +12,9 @@ import { Home, Search, Star, Trophy } from "lucide-react";
 import { vocabulary } from "~/data/vocabulary";
 import { getWordSearch } from "~/services/loaders/wordsearch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "~/components/ui/dialog";
+import { useFetcher } from "@remix-run/react";
+import { useParams } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 
 export const meta: MetaFunction = () => {
   return [
@@ -49,6 +52,9 @@ interface GameSession {
 
 export default function WordSearchLevels() {
   const loaderData = useLoaderData<any>();
+  const {id} = useParams<any>();
+  const fetcher = useFetcher<any>();
+  const navigate = useNavigate();
 
   // Obtener palabras del loader y remapear claves
   const words = (loaderData.wordSearchData?.words || []).map((w: any) => ({
@@ -64,6 +70,14 @@ export default function WordSearchLevels() {
   const handleComplete = (score: number) => {
     setLastScore(score);
     setShowCongrats(true);
+  };
+
+  const handleGetReward = () => {
+    fetcher.submit(
+      {},
+      { method: "POST", action: `/api/activities/getreward/${id}` }
+    );
+    navigate("/activities");
   };
 
   // Renderizar directamente la sopa de letras
@@ -94,7 +108,7 @@ export default function WordSearchLevels() {
             <p className="text-lg font-semibold mb-2">¡Has completado la sopa de letras!</p>
           </div>
           <DialogFooter>
-            <Button className="w-full" onClick={() => setShowCongrats(false)}>
+            <Button className="w-full" onClick={() => {handleGetReward(); setShowCongrats(false)}}>
               Obtener recompensa
             </Button>
           </DialogFooter>
